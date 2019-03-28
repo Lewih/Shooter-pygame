@@ -36,7 +36,7 @@ class UI:
         # Game clock setting
         self.clock = pygame.time.Clock() 
 
-        # Finilize screen
+        # Finalize screen
         pygame.display.set_caption("Shooter")
         pygame.display.update()
 
