@@ -24,17 +24,34 @@ class Ship(pygame.sprite.Sprite):
         if keys[pygame.K_UP] and self.rect.y > 10:
             self.rect.y -= self.speed
 
+        # Shoot
+        if keys[pygame.K_SPACE]:
+            new_bullet = Bullet(interface.user.rect.x, interface.user.rect.y)
+            interface.all_sprites.add(new_bullet)
         # New position to screen
         interface.screen.blit(self.image, self.rect)
 
 ### bullet class, static speed.
 class Bullet(pygame.sprite.Sprite):
-    def __init__(self):
+    def __init__(self, x_pos, y_pos):
         super().__init__()
-        self.image = "Images/bullet.png"
+        self.image = pygame.image.load("Images/bullet.png")
+        self.rect = self.image.get_rect(topleft=(x_pos+23, y_pos+5))
+        self.speed = 5
+        
+    def update(self, keys):
+        self.rect.y -= self.speed
+        
+        if(self.rect.y < 1):
+            self.kill()
+        if(self.rect.y > 600):
+            self.kill()
+        if(self.rect.x < 1):
+            self.kill()
+        if(self.rect.x > 799):
+            self.kill()
 
-    def update(self):
-        pass
+        interface.screen.blit(self.image, self.rect)
 
 class UI:
     def __init__(self):
@@ -50,10 +67,12 @@ class UI:
 
         # TODO Group of Ships 
         self.ships = pygame.sprite.Group()
+        self.all_sprites = pygame.sprite.Group()
 
         # User
         self.user = Ship()
         self.ships.add(self.user)
+        self.all_sprites.add(self.user)
 
         # Finalize screen
         pygame.display.set_caption("Shooter")
@@ -70,7 +89,7 @@ class UI:
 
             # Refresh screen and update sprites
             self.screen.blit(self.background, (0, 0))
-            self.user.update(pygame.key.get_pressed())
+            self.all_sprites.update(pygame.key.get_pressed())
             pygame.display.update()
 
         pygame.quit()
