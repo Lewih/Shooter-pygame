@@ -90,8 +90,8 @@ class Bullet(Object):
         super().__init__(position)
         self._angle = angle
         self._spin  = 0
-        self._speed = [math.cos(math.radians(self._angle)) / interface.fps, 
-                       - math.sin(math.radians(self._angle)) / interface.fps]
+        self._speed = [5 * math.cos(math.radians(self._angle)) / interface.fps, 
+                       5 * - math.sin(math.radians(self._angle)) / interface.fps]
         self._size  = self._image.get_size( )
 
     def update(self):
@@ -134,7 +134,7 @@ class UI:
         # Finalize screen
         pygame.display.set_caption("Shooter")
 
-        dimension = [[[2200, 5], [1, 100]], [[2200, 5], [1, 799]], [[5, 2000], [1, 1]], [[5, 2000], [1099, 1]]]
+        dimension = [[[2200, 15], [1, 100]], [[2200, 5], [1, 799]], [[5, 2000], [1, 1]], [[5, 2000], [1099, 1]]]
         for obj in dimension:
             item = Solid(obj[1], obj[0])
             self.environment.add(item)
