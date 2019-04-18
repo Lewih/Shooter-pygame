@@ -1,14 +1,14 @@
 import pygame
 from bullet import Bullet
 from ship import Ship
+# Initialize pygame
+pygame.init()
+
 SCREEN_SIZE = (800, 600)
 
 
 class UI:
     def __init__(self):
-        # Initialize pygame
-        pygame.init()
-
         # Setting up the screen
         self.screen = pygame.display.set_mode(SCREEN_SIZE)
         self.background = pygame.image.load("Images/background.jpg").convert()
@@ -27,7 +27,6 @@ class UI:
 
         # Finalize screen
         pygame.display.set_caption("Shooter")
-        pygame.display.update()
 
     def main(self):
         done = False
@@ -37,6 +36,9 @@ class UI:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     done = True
+
+            
+            self.dt = 30.0 / self.clock.tick(100)
 
             # Refresh screen and update sprites
             self.screen.blit(self.background, (0, 0))

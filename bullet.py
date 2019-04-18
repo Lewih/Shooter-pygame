@@ -8,7 +8,7 @@ class Bullet(pygame.sprite.Sprite):
         self.speed = 5
 
     def update(self, keys, interface):
-        self.rect.y -= self.speed
+        self.rect.y -= self.speed * interface.dt
 
         if self.rect.y < 1:
             self.kill()
