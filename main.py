@@ -14,7 +14,7 @@ class Object(pygame.sprite.Sprite):
         self._speed    = [0, 0] # [x, y]
         self._angle    = 0
         self._spin     = 0
-        self.rect      = self._image.get_rect(topleft = (375, 540))
+        self.rect      = self._image.get_rect()
         self.rect.x    = position[0]
         self.rect.y    = position[1]
 
@@ -49,7 +49,6 @@ class Ship(Object):
         self._spin        = 4
         self._max_speed   = [10, 10] # [x, y]
         self._size        = self._image.get_size()
-
     
     def update(self, pressedKeys):
         if pressedKeys[pygame.K_UP]:
