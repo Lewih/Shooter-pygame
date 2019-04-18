@@ -14,11 +14,13 @@ class Object(pygame.sprite.Sprite):
         self._speed    = [0, 0] # [x, y]
         self._angle    = 0
         self._spin     = 0
-        self._position = position
+        self.rect      = self._image.get_rect(topleft = (375, 540))
+        self.rect.x    = position[0]
+        self.rect.y    = position[1]
 
     def update(self):
-        self._position[1] += self._speed[1] / interface.fps
-        self._position[0] += self._speed[0] / interface.fps
+        self.rect.x += self._speed[0] / interface.fps
+        self.rect.y += self._speed[1] / interface.fps
 
         w, h       = self._image.get_size()
         box        = [pygame.math.Vector2(p) for p in [(0, 0), (w, 0), (w, -h), (0, -h)]]
@@ -32,7 +34,7 @@ class Object(pygame.sprite.Sprite):
         pivot_move   = pivot_rotate - pivot
 
         # calculate the upper left origin of the rotated image
-        origin = (self._position[0] - self._size[0] / 2 + min_box[0] - pivot_move[0], self._position[1] - self._size[1] / 2 - max_box[1] + pivot_move[1])
+        origin = (self.rect.x - self._size[0] / 2 + min_box[0] - pivot_move[0], self.rect.y - self._size[1] / 2 - max_box[1] + pivot_move[1])
 
         self.rotated_image = pygame.transform.rotate(self._image, self._angle)
         interface.screen.blit(self.rotated_image, origin)
@@ -41,12 +43,13 @@ class Object(pygame.sprite.Sprite):
 class Ship(Object):
 
     def __init__(self, position):
-        super().__init__(position)
         self._image       = pygame.image.load('Images/ship.png')
+        super().__init__(position)
         self.acceleration = 1
         self._spin        = 4
         self._max_speed   = [10, 10] # [x, y]
         self._size        = self._image.get_size()
+
     
     def update(self, pressedKeys):
         if pressedKeys[pygame.K_UP]:
@@ -74,27 +77,29 @@ class Ship(Object):
             self._speed = [0, 0]
 
         if pressedKeys[pygame.K_SPACE]:
-            new_bullet = Bullet(self._position, self._angle)
+            new_bullet = Bullet([self.rect.x, self.rect.y], self._angle)
             interface.bullets.add(new_bullet)
-        
+
         Object.update(self)
 
 
 class Bullet(Object):
 
     def __init__(self, position, angle):
-        super().__init__(position)
         self._image = pygame.image.load('Images/bullet.png')
+        super().__init__(position)
         self._angle = angle
         self._spin  = 0
-        self._speed = [1, 1]
-        self._size  = self._image.get_size()
-    
+        self._speed = [math.cos(math.radians(self._angle)) / interface.fps, 
+                       - math.sin(math.radians(self._angle)) / interface.fps]
+        self._size  = self._image.get_size( )
+
     def update(self):
         Object.update(self)
 
 
 class UI:
+
     def __init__(self):
         # Setting up the screen
         self.screen = pygame.display.set_mode(SCREEN_SIZE)
@@ -109,7 +114,6 @@ class UI:
         # User
         self.user = Ship([100, 100])
         self.ships.add(self.user)
-        self.bullets.add()
 
         # Finalize screen
         pygame.display.set_caption("Shooter")
@@ -130,7 +134,7 @@ class UI:
             self.bullets.update()
             self.ships.update(pygame.key.get_pressed())
             pygame.display.update()
-            print(self.user._speed , self.user._angle, self.clock.get_fps(), self.bullets.sprites())
+            #print(self.user._speed , self.user._angle, self.clock.get_fps(), self.bullets.sprites())
 
         pygame.quit()
 
