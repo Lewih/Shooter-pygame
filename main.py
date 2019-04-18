@@ -5,7 +5,7 @@ import math
 # Initialize pygame
 pygame.init()
 
-SCREEN_SIZE = (1000, 1000)
+SCREEN_SIZE = (1100, 800)
 
 class Object(pygame.sprite.Sprite):
 
@@ -78,6 +78,7 @@ class Ship(Object):
         if pressedKeys[pygame.K_SPACE]:
             new_bullet = Bullet([self.rect.x, self.rect.y], self._angle)
             interface.bullets.add(new_bullet)
+            interface.all.add(new_bullet)
 
         Object.update(self)
 
@@ -97,6 +98,19 @@ class Bullet(Object):
         Object.update(self)
 
 
+class Solid(Object):
+
+    def __init__(self, position, dimension):
+        self._image = pygame.Surface(dimension)
+        super().__init__(position)
+        self._image.fill((255, 0, 0))
+        self._size = self._image.get_size()
+    
+    def update(self):
+        Object.update(self)
+        pygame.sprite.groupcollide(interface.all, interface.environment, True, False)
+            
+        
 class UI:
 
     def __init__(self):
@@ -109,14 +123,22 @@ class UI:
         # Group of Ships
         self.ships   = pygame.sprite.Group()
         self.bullets = pygame.sprite.Group()
+        self.environment = pygame.sprite.Group()
+        self.all = pygame.sprite.Group()
 
         # User
-        self.user = Ship([100, 100])
+        self.user = Ship([100, 200])
         self.ships.add(self.user)
+        self.all.add(self.user)
 
         # Finalize screen
         pygame.display.set_caption("Shooter")
 
+        dimension = [[[2200, 5], [1, 100]], [[2200, 5], [1, 799]], [[5, 2000], [1, 1]], [[5, 2000], [1099, 1]]]
+        for obj in dimension:
+            item = Solid(obj[1], obj[0])
+            self.environment.add(item)
+            
     def main(self):
         done = False
 
@@ -132,8 +154,9 @@ class UI:
             self.screen.fill((0, 0, 0))
             self.bullets.update()
             self.ships.update(pygame.key.get_pressed())
+            self.environment.update()
             pygame.display.update()
-            #print(self.user._speed , self.user._angle, self.clock.get_fps(), self.bullets.sprites())
+            print(self.user._speed , self.user._angle, self.clock.get_fps(), self.bullets.sprites())
 
         pygame.quit()
 
