@@ -5,7 +5,7 @@ import math
 # Initialize pygame
 pygame.init()
 
-SCREEN_SIZE = (1100, 800)
+SCREEN_SIZE = (1300, 800)
 
 class Object(pygame.sprite.Sprite):
 
@@ -42,38 +42,55 @@ class Object(pygame.sprite.Sprite):
 
 class Ship(Object):
 
-    def __init__(self, position):
-        self._image       = pygame.image.load('Images/ship.png')
+    def __init__(self, position, image):
+        self._image       = pygame.image.load(image).convert_alpha()
         super().__init__(position)
-        self.acceleration = 1
+        self.acceleration = 0.7
         self._spin        = 4
         self._max_speed   = [10, 10] # [x, y]
+        self._speed_limit = self._max_speed
         self._size        = self._image.get_size()
+        self._stabilizer = 0.2
     
     def update(self, pressedKeys):
+        self._speed_limit = [abs(self._max_speed[0] * math.cos(math.radians(self._angle))), 
+                             abs(self._max_speed[1] * math.sin(math.radians(self._angle)))]
+        
         if pressedKeys[pygame.K_UP]:
-            if self._speed[0] <= self._max_speed[0] and self._speed[0] >= -self._max_speed[0]:
+            if self._speed[0] <= self._speed_limit[0] and self._speed[0] >= -self._speed_limit[0]:
                 self._speed[0] += self.acceleration * math.cos(math.radians(self._angle)) / interface.fps
-            elif self._speed[0] > self._max_speed[0]:
-                self._speed[0] = self._max_speed[0] - 0.1
-            elif self._speed[0] < -self._max_speed[0]:
-                self._speed[0] = -self._max_speed[0] + 0.1
+            elif self._speed[0] > self._speed_limit[0]:
+                self._speed[0] = self._speed[0] - self._stabilizer / interface.fps
+            elif self._speed[0] < -self._speed_limit[0]:
+                self._speed[0] = self._speed[0] + self._stabilizer / interface.fps
 
-            if self._speed[1] <= self._max_speed[1] and self._speed[1] >= -self._max_speed[1]:
+            if self._speed[1] <= self._speed_limit[1] and self._speed[1] >= -self._speed_limit[1]:
                 self._speed[1] -= self.acceleration * math.sin(math.radians(self._angle)) / interface.fps
-            elif self._speed[1] > self._max_speed[1]:
-                self._speed[1] = self._max_speed[1] - 0.1
-            elif self._speed[1] < -self._max_speed[1]:
-                self._speed[1] = -self._max_speed[1] + 0.1
+            elif self._speed[1] > self._speed_limit[1]:
+                self._speed[1] = self._speed[1] - self._stabilizer / interface.fps
+            elif self._speed[1] < -self._speed_limit[1]:
+                self._speed[1] = self._speed[1] + self._stabilizer / interface.fps
+        
+        elif pressedKeys[pygame.K_DOWN]:
+            if self._speed[0] <= self._speed_limit[0] and self._speed[0] >= -self._speed_limit[0]:
+                self._speed[0] -= self.acceleration / 2 * math.cos(math.radians(self._angle)) / interface.fps
+            elif self._speed[0] > self._speed_limit[0]:
+                self._speed[0] = self._speed[0] - self._stabilizer / interface.fps
+            elif self._speed[0] < -self._speed_limit[0]:
+                self._speed[0] = self._speed[0] + self._stabilizer / interface.fps
+
+            if self._speed[1] <= self._speed_limit[1] and self._speed[1] >= -self._speed_limit[1]:
+                self._speed[1] += self.acceleration / 2 * math.sin(math.radians(self._angle)) / interface.fps
+            elif self._speed[1] > self._speed_limit[1]:
+                self._speed[1] = self._speed[1] - self._stabilizer / interface.fps
+            elif self._speed[1] < -self._speed_limit[1]:
+                self._speed[1] = self._speed[1] + self._stabilizer / interface.fps
 
         if pressedKeys[pygame.K_LEFT]:
             self._angle += self._spin / interface.fps
 
         if pressedKeys[pygame.K_RIGHT]:
             self._angle -= self._spin / interface.fps
-        
-        if pressedKeys[pygame.K_DOWN]:
-            self._speed = [0, 0]
 
         if pressedKeys[pygame.K_SPACE]:
             new_bullet = Bullet([self.rect.x, self.rect.y], self._angle)
@@ -86,7 +103,7 @@ class Ship(Object):
 class Bullet(Object):
 
     def __init__(self, position, angle):
-        self._image = pygame.image.load('Images/bullet.png')
+        self._image = pygame.image.load('Images/bullet.png').convert_alpha()
         super().__init__(position)
         self._angle = angle
         self._spin  = 0
@@ -100,15 +117,15 @@ class Bullet(Object):
 
 class Solid(Object):
 
-    def __init__(self, position, dimension):
+    def __init__(self, position, dimension, color):
         self._image = pygame.Surface(dimension)
         super().__init__(position)
-        self._image.fill((255, 0, 0))
+        self._image.fill(color)
         self._size = self._image.get_size()
     
     def update(self):
         Object.update(self)
-        pygame.sprite.groupcollide(interface.all, interface.environment, True, False)
+        self.value = pygame.sprite.groupcollide(interface.all, interface.environment, True, False)
             
         
 class UI:
@@ -127,7 +144,7 @@ class UI:
         self.all = pygame.sprite.Group()
 
         # User
-        self.user = Ship([100, 200])
+        self.user = Ship([100, 200], 'Images/ship.png')
         self.ships.add(self.user)
         self.all.add(self.user)
 
@@ -136,7 +153,7 @@ class UI:
 
         dimension = [[[2200, 15], [1, 100]], [[2200, 5], [1, 799]], [[5, 2000], [1, 1]], [[5, 2000], [1099, 1]]]
         for obj in dimension:
-            item = Solid(obj[1], obj[0])
+            item = Solid(obj[1], obj[0], (255, 0, 0))
             self.environment.add(item)
             
     def main(self):
