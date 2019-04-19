@@ -10,7 +10,8 @@ SCREEN_SIZE = (1300, 800)
 class Game_Object(pygame.sprite.Sprite):
     """Generic game object. 
     Implements sprites rotation and movement.
-    _image and _size must be defined in child class."""
+    _image and _size must be defined in child class.
+    """
 
     def __init__(self, position):
         super().__init__()
@@ -51,6 +52,7 @@ class Ship(Game_Object):
         image {str} -- Ship Image directory
         bullet_speed {float} -- Ship bullet speed
     """
+    
     def __init__(self, start_pos, image, bullet_speed):
         self._image_dir    = image
         self._image        = pygame.image.load(image).convert_alpha()
@@ -135,7 +137,7 @@ class Bullet(Game_Object):
             start_pos {array: float} -- [x, y] start position
             angle {float} -- angle of the vector in degrees
             bullet_speed {float} -- bullet speed
-        """
+    """
 
     def __init__(self, start_pos, angle, bullet_speed):
         self._image = pygame.image.load('Images/bullet.png').convert_alpha()
@@ -157,7 +159,8 @@ class Solid(Game_Object):
         Arguments:
             position {array: float} -- [x, y] start position
             dimension {array: float} -- [x, y] polygon dimension
-            color {tuple} -- (R, G, B) color standard"""
+            color {tuple} -- (R, G, B) color standard
+    """
 
     def __init__(self, position, dimension, color):
         self._image = pygame.Surface(dimension)
@@ -168,8 +171,8 @@ class Solid(Game_Object):
     def update(self):
         Game_Object.update(self)
         self.value = pygame.sprite.groupcollide(interface.all, interface.environment, True, False)
-            
-        
+
+
 class UI:
 
     def __init__(self):
