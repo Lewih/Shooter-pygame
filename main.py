@@ -7,7 +7,7 @@ pygame.init()
 
 SCREEN_SIZE = (1300, 800)
 
-class Object(pygame.sprite.Sprite):
+class Game_Object(pygame.sprite.Sprite):
 
     def __init__(self, position):
         super().__init__()
@@ -40,9 +40,9 @@ class Object(pygame.sprite.Sprite):
         interface.screen.blit(self.rotated_image, origin)
 
 
-class Ship(Object):
+class Ship(Game_Object):
 
-    def __init__(self, position, image):
+    def __init__(self, position, image, bullet_speed):
         self._image       = pygame.image.load(image).convert_alpha()
         super().__init__(position)
         self.acceleration = 0.7
@@ -51,6 +51,7 @@ class Ship(Object):
         self._speed_limit = self._max_speed
         self._size        = self._image.get_size()
         self._stabilizer = 0.2
+        self._bullet_speed = bullet_speed
     
     def update(self, pressedKeys):
         self._speed_limit = [abs(self._max_speed[0] * math.cos(math.radians(self._angle))), 
@@ -93,29 +94,30 @@ class Ship(Object):
             self._angle -= self._spin / interface.fps
 
         if pressedKeys[pygame.K_SPACE]:
-            new_bullet = Bullet([self.rect.x, self.rect.y], self._angle)
+            new_bullet = Bullet([self.rect.x, self.rect.y], self._angle, self._bullet_speed)
             interface.bullets.add(new_bullet)
             interface.all.add(new_bullet)
 
-        Object.update(self)
+        Game_Object.update(self)
 
 
-class Bullet(Object):
+class Bullet(Game_Object):
 
-    def __init__(self, position, angle):
+    def __init__(self, position, angle, bullet_speed):
         self._image = pygame.image.load('Images/bullet.png').convert_alpha()
         super().__init__(position)
         self._angle = angle
         self._spin  = 0
-        self._speed = [5 * math.cos(math.radians(self._angle)) / interface.fps, 
-                       5 * - math.sin(math.radians(self._angle)) / interface.fps]
+        self._bullet_speed = bullet_speed
         self._size  = self._image.get_size( )
 
     def update(self):
-        Object.update(self)
+        self._speed = [self._bullet_speed * math.cos(math.radians(self._angle)) / interface.fps, 
+                       self._bullet_speed * - math.sin(math.radians(self._angle)) / interface.fps]
+        Game_Object.update(self)
 
 
-class Solid(Object):
+class Solid(Game_Object):
 
     def __init__(self, position, dimension, color):
         self._image = pygame.Surface(dimension)
@@ -124,7 +126,7 @@ class Solid(Object):
         self._size = self._image.get_size()
     
     def update(self):
-        Object.update(self)
+        Game_Object.update(self)
         self.value = pygame.sprite.groupcollide(interface.all, interface.environment, True, False)
             
         
@@ -144,7 +146,7 @@ class UI:
         self.all = pygame.sprite.Group()
 
         # User
-        self.user = Ship([100, 200], 'Images/ship.png')
+        self.user = Ship([100, 200], 'Images/ship.png', 10)
         self.ships.add(self.user)
         self.all.add(self.user)
 
