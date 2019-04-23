@@ -8,6 +8,10 @@ import socket
 pygame.init()
 
 SCREEN_SIZE = (1100, 800)
+CAMERA_X = 0
+CAMERA_Y = 0
+DB_FONT = pygame.font.SysFont("monospace", 15)
+DEBUG = True
 
 class Server(threading.Thread):
 	PORT = 50000
@@ -50,6 +54,7 @@ class Server(threading.Thread):
 			except Exception as err:
 				self.send(err)
 
+
 class Client(threading.Thread):
     pass
 
@@ -60,18 +65,45 @@ class Game_Object(pygame.sprite.Sprite):
     _image and _size must be defined in child class.
     """
 
-    def __init__(self, position):
+    def __init__(self, position, camera_mode = "normal"):
         super().__init__()
-        self._speed    = [0, 0] # [x, y]
-        self._angle    = 0
-        self._spin     = 0
-        self.rect      = self._image.get_rect()
-        self.rect.x    = position[0]
-        self.rect.y    = position[1]
+        self._speed      = [0, 0] # [x, y]
+        self._angle      = 0
+        self._spin       = 0
+        self.rect        = self._image.get_rect()
+        self.rect.x      = position[0]
+        self.rect.y      = position[1]
+        self._position   = [position[0], position[1]]
+        self._camera_mode = camera_mode
+
+    def __str__(self):
+        return """
+        _position: [%f, %f]
+        _speed: [%f, %f]
+        _spin: %f
+        _angle: %f
+        _camera: %s""" % (self.rect.x, self.rect.y, self._speed[0], self._speed[1],
+                        self._spin, self._angle, self._camera_mode)
+
+    def display_label(self):
+        """Display object __str__ as a label in game"""
+
+        values = self.__str__()
+        values = values.split("\n")
+
+        offset = 0
+        for string in values:
+            offset += 15
+            display_label = DB_FONT.render(string ,1, (255, 255, 0))
+            interface.screen.blit(display_label, (self._display_label_position[0], 
+                                          self._display_label_position[1] + offset))
 
     def update(self):
-        self.rect.x += self._speed[0] / interface.fps
-        self.rect.y += self._speed[1] / interface.fps
+        global CAMERA_X, CAMERA_Y
+        self._position[0] += self._speed[0] / DELTA_TIME
+        self._position[1] += self._speed[1] / DELTA_TIME
+        self.rect.x        = int(self._position[0])
+        self.rect.y        = int(self._position[1])
 
         w, h       = self._image.get_size()
         box        = [pygame.math.Vector2(p) for p in [(0, 0), (w, 0), (w, -h), (0, -h)]]
@@ -87,8 +119,26 @@ class Game_Object(pygame.sprite.Sprite):
         # calculate the upper left origin of the rotated image
         origin = (self.rect.x - self._size[0] / 2 + min_box[0] - pivot_move[0], self.rect.y - self._size[1] / 2 - max_box[1] + pivot_move[1])
 
+        # control whether it is an edge element
+        if interface.edge.has(self): 
+            origin = (self.rect.x , self.rect.y)
+
         self.rotated_image = pygame.transform.rotate(self._image, self._angle)
-        interface.screen.blit(self.rotated_image, origin)
+        w, h = self.rotated_image.get_size()
+
+        if self._camera_mode == 'scrolling':
+            CAMERA_X = self.rect.x
+            CAMERA_Y = self.rect.y
+            self._display_label_position = ((SCREEN_SIZE[0] / 2.0) - w / 2 + 45, 10 + (SCREEN_SIZE[1] / 2.0) - h / 2 )
+            interface.screen.blit(self.rotated_image, ((SCREEN_SIZE[0] / 2.0) - w / 2, (SCREEN_SIZE[1] / 2.0) - h / 2))
+        
+        elif self._camera_mode == "normal":
+            self._display_label_position = ((SCREEN_SIZE[0] / 2) - ((CAMERA_X - origin[0])),
+                                                       (SCREEN_SIZE[1] / 2) - ((CAMERA_Y - origin[1])) - 30)
+            interface.screen.blit(self.rotated_image, ((SCREEN_SIZE[0] / 2) - ((CAMERA_X - origin[0])),
+                                                       (SCREEN_SIZE[1] / 2) - ((CAMERA_Y - origin[1]))))
+        if DEBUG:
+            self.display_label()
 
 
 class Ship(Game_Object):
@@ -102,14 +152,18 @@ class Ship(Game_Object):
         max_v_speed {float} -- nominal max vertical speed
         max_h_speed {float} -- nominal max horizontal speed
         bullet_speed {float} -- Ship bullet speed
-        fire_rate {float} -- fire interval
+        fire_rate {float} -- fire sleep in game tick / DELTA_TIME
+        camera_mode{string} -- normal = not player object
+                               scrolling = locked camera on player ship
+        controlled{bool}  -- ship is controlled by user
     """
     
     def __init__(self, start_pos, image, acceleration,
-                 spin, max_v_speed, max_h_speed, bullet_speed, fire_rate):
+                 spin, max_v_speed, max_h_speed, bullet_speed,
+                 fire_rate, camera_mode = 'normal', controlled = False):
         self._image_dir    = image
         self._image        = pygame.image.load(image).convert_alpha()
-        super().__init__(start_pos)
+        super().__init__(start_pos, camera_mode = camera_mode)
         self._size         = self._image.get_size()
         self._acceleration = acceleration
         self._spin         = spin
@@ -118,6 +172,7 @@ class Ship(Game_Object):
         self._bullet_speed = bullet_speed
         self._fire_rate    = fire_rate
         self._bullet_timer = 0
+        self._controlled = controlled
     
     def __str__(self):
         return("""Ship = {
@@ -125,24 +180,20 @@ class Ship(Game_Object):
         _speed: [%f, %f],
         _acceleration: %f,
         _max_v_speed: %f,
-        _spin: %f,
         _max_h_speed: %f,
+        _spin: %f,
         _bullet_speed: %f
-        _fire_rate_ %f,
-        _image: %s}""" %(self.rect.x, self.rect.y, self._speed[0], self._speed[1],
-                         self._acceleration, self._max_v_speed, self._spin,
-                         self._max_h_speed, self._bullet_speed, self._fire_rate, self._image_dir))
-    
-    def update(self, pressedKeys):
-        """Overriden pygame.sprite.sprite method.
-        Acceleration is applied according to its vectorial component and in-game events.
-        
-        Arguments:
-            pressedKeys {Tuple} -- collection of events generated by pygame.key
-        """
+        _fire_rate: %f,
+        _bullet_timer: %f,
+        _image: %s
+        _camera_mode: %s
+        _controlled: %d}""" % (self.rect.x, self.rect.y, self._speed[0], self._speed[1],
+                        self._acceleration, self._max_v_speed, self._max_h_speed,
+                        self._spin, self._bullet_speed, self._fire_rate, self._bullet_timer,
+                        self._image_dir, self._camera_mode, self._controlled))
 
-        if self._bullet_timer > 0:
-            self._bullet_timer -= 1 / interface.fps
+    def controls(self, pressedKeys):
+        """keyboard handling"""
 
         cos = math.cos(math.radians(self._angle))
         sin = math.sin(math.radians(self._angle))
@@ -158,77 +209,90 @@ class Ship(Game_Object):
         if pressedKeys[pygame.K_UP]:
             if self._rel_max_v_speed[0] > 0:
                 if self._speed[0] <= self._rel_max_v_speed[0]:
-                    self._speed[0] += self._acceleration * cos / interface.fps
+                    self._speed[0] += self._acceleration * cos / DELTA_TIME
             else:
                 if self._speed[0] >= self._rel_max_v_speed[0]:
-                    self._speed[0] += self._acceleration * cos / interface.fps
+                    self._speed[0] += self._acceleration * cos / DELTA_TIME
 
             if self._rel_max_v_speed[1] > 0:
                 if self._speed[1] <= self._rel_max_v_speed[1]:
-                    self._speed[1] += self._acceleration * -sin / interface.fps
+                    self._speed[1] += self._acceleration * -sin / DELTA_TIME
             else:
                 if self._speed[1] >= self._rel_max_v_speed[1]:
-                    self._speed[1] += self._acceleration * -sin / interface.fps
+                    self._speed[1] += self._acceleration * -sin / DELTA_TIME
             
         elif pressedKeys[pygame.K_DOWN]:
             if self._rel_max_v_speed[0] > 0:
                 if self._speed[0] >= -self._rel_max_v_speed[0]:
-                    self._speed[0] -= self._acceleration * cos / interface.fps
+                    self._speed[0] -= self._acceleration * cos / DELTA_TIME
             else:
                 if self._speed[0] <= -self._rel_max_v_speed[0]:
-                    self._speed[0] -= self._acceleration * cos / interface.fps
+                    self._speed[0] -= self._acceleration * cos / DELTA_TIME
 
             if self._rel_max_v_speed[1] > 0:
                 if self._speed[1] >= -self._rel_max_v_speed[1]:
-                    self._speed[1] -= self._acceleration * -sin / interface.fps
+                    self._speed[1] -= self._acceleration * -sin / DELTA_TIME
             else:
                 if self._speed[1] <= -self._rel_max_v_speed[1]:
-                    self._speed[1] -= self._acceleration * -sin / interface.fps
+                    self._speed[1] -= self._acceleration * -sin / DELTA_TIME
         
         if pressedKeys[pygame.K_q]:
             if self._rel_max_h_speed[0] > 0:
                 if self._speed[0] <= self._rel_max_h_speed[0]:
-                    self._speed[0] += self._max_h_speed * cos90 / interface.fps
+                    self._speed[0] += self._max_h_speed * cos90 / DELTA_TIME
             else:
                 if self._speed[0] >= self._rel_max_h_speed[0]:
-                    self._speed[0] += self._max_h_speed * cos90 / interface.fps
+                    self._speed[0] += self._max_h_speed * cos90 / DELTA_TIME
 
             if self._rel_max_h_speed[1] > 0:
                 if self._speed[1] <= self._rel_max_h_speed[1]:
-                    self._speed[1] += self._max_h_speed * -sin90 / interface.fps
+                    self._speed[1] += self._max_h_speed * -sin90 / DELTA_TIME
             else:
                 if self._speed[1] >= self._rel_max_h_speed[1]:
-                    self._speed[1] += self._max_h_speed * -sin90 / interface.fps
+                    self._speed[1] += self._max_h_speed * -sin90 / DELTA_TIME
         
         elif pressedKeys[pygame.K_e]:
             if self._rel_max_h_speed[0] > 0:
                 if self._speed[0] >= -self._rel_max_h_speed[0]:
-                    self._speed[0] -= self._max_h_speed * cos90 / interface.fps
+                    self._speed[0] -= self._max_h_speed * cos90 / DELTA_TIME
             else:
                 if self._speed[0] <= -self._rel_max_h_speed[0]:
-                    self._speed[0] -= self._max_h_speed * cos90 / interface.fps
+                    self._speed[0] -= self._max_h_speed * cos90 / DELTA_TIME
 
             if self._rel_max_h_speed[1] > 0:
                 if self._speed[1] >= -self._rel_max_h_speed[1]:
-                    self._speed[1] -= self._max_h_speed * -sin90 / interface.fps
+                    self._speed[1] -= self._max_h_speed * -sin90 / DELTA_TIME
             else:
                 if self._speed[1] <= -self._rel_max_h_speed[1]:
-                    self._speed[1] -= self._max_h_speed * -sin90 / interface.fps
+                    self._speed[1] -= self._max_h_speed * -sin90 / DELTA_TIME
 
         if pressedKeys[pygame.K_LEFT]:
-            self._angle += self._spin / interface.fps
+            self._angle += self._spin / DELTA_TIME
 
         if pressedKeys[pygame.K_RIGHT]:
-            self._angle -= self._spin / interface.fps
+            self._angle -= self._spin / DELTA_TIME
         
         if pressedKeys[pygame.K_w]:
             self._speed = [0, 0]
 
         if pressedKeys[pygame.K_SPACE] and self._bullet_timer <= 0:
             self._bullet_timer = self._fire_rate
-            new_bullet = Bullet([self.rect.x, self.rect.y], self._angle, self._bullet_speed)
+            new_bullet = Bullet((self.rect.x, self.rect.y), self._angle, self._bullet_speed)
             interface.bullets.add(new_bullet)
-            interface.all.add(new_bullet)
+
+    def update(self, pressedKeys):
+        """Overriden pygame.sprite.sprite method.
+        Acceleration is applied according to its vectorial component and in-game events.
+        
+        Arguments:
+            pressedKeys {Tuple} -- collection of events generated by pygame.key
+        """
+
+        if self._bullet_timer > 0:
+            self._bullet_timer -= 1 / DELTA_TIME
+        
+        if self._controlled:
+            self.controls(pressedKeys)
 
         Game_Object.update(self)
 
@@ -252,11 +316,8 @@ class Bullet(Game_Object):
         self._speed = [self._bullet_speed * math.cos(math.radians(self._angle)), 
                        self._bullet_speed * -math.sin(math.radians(self._angle))]
 
-    def update(self):
-        Game_Object.update(self)
 
-
-class Solid(Game_Object):
+class Surface(Game_Object):
     """Simple game surface.
     
         Arguments:
@@ -265,46 +326,62 @@ class Solid(Game_Object):
             color {tuple} -- (R, G, B) color standard
     """
 
-    def __init__(self, position, dimension, color):
-        self._image = pygame.Surface(dimension)
-        super().__init__(position)
+    def __init__(self, position, dimension, color, camera_mode = "normal", spin = 0, speed = [0, 0]):
+        self._image = pygame.Surface(dimension, pygame.SRCALPHA)
+        super().__init__(position, camera_mode = camera_mode)
         self._image.fill(color)
         self._size = self._image.get_size()
+        self._spin = spin
+        self._speed = speed
     
     def update(self):
+        self._angle += self._spin / DELTA_TIME
         Game_Object.update(self)
-        self.value = pygame.sprite.groupcollide(interface.all, interface.environment, True, False)
+        self.value = pygame.sprite.groupcollide(interface.bullets, interface.edge, True, False)
 
 
-class UI:
+class Test_game:
 
-    def __init__(self):
+    def __init__(self, map_size):
+        global SCREEN_SIZE, CAMERA_X, CAMERA_Y
+        self.map_size = map_size
+
         # Setting up the screen
         self.screen = pygame.display.set_mode(SCREEN_SIZE)
+        SCREEN_SIZE = self.screen.get_size()
 
         # Game clock setting
         self.clock = pygame.time.Clock()
 
-        # Group of Ships
+        # Groups
         self.ships   = pygame.sprite.Group()
         self.bullets = pygame.sprite.Group()
-        self.environment = pygame.sprite.Group()
-        self.all = pygame.sprite.Group()
+        self.edge = pygame.sprite.Group()
+        self.rectangles = pygame.sprite.Group()
 
         # User
-        self.user = Ship([100, 200], 'Images/ship.png', 0.7, 10, 10.0, 0.4, 10.0, 10)
+        self.user = Ship([100, 200], 'Images/ship.png', 0.7, 10, 10.0, 0.4, 10.0, 10, camera_mode='scrolling', controlled=True)
+        CAMERA_X = 100
+        CAMERA_Y = 200
         self.ships.add(self.user)
-        self.all.add(self.user)
 
         # Finalize screen
         pygame.display.set_caption("Shooter")
 
-        dimension = [[[2200, 15], [1, 100]], [[2200, 5], [1, 799]], [[5, 2000], [1, 1]], [[5, 2000], [1099, 1]]]
-        for obj in dimension:
-            item = Solid(obj[1], obj[0], (255, 0, 0))
-            self.environment.add(item)
+        boundaries = [[[0, 0], [map_size[0], 20]], [[0, map_size[1]], [map_size[0], 20]], # [position], [dimension]
+                      [[0, 0], [20, map_size[1]]], [[map_size[0], 0], [20, map_size[1]]]]
+        for obj in boundaries:
+            item = Surface(obj[0], obj[1], (255, 0, 0))
+            self.edge.add(item)
+
+        test = Surface([300, 300], [100,100], (0, 0, 255), spin = 0.5, speed=[1, 1])
+        test1 = Surface([300, 300], [100,100], (0, 0, 255), spin = 0.5)
+        self.rectangles.add(test)
+        self.rectangles.add(test1)
+        #self.centre = Surface([0, 0], [4,4], (255, 255, 255), spin = 0, camera_mode="scrolling")
 
     def main(self):
+        global DELTA_TIME
         done = False
 
         # check for exit
@@ -313,19 +390,21 @@ class UI:
                 if event.type == pygame.QUIT:
                     done = True
 
-            self.fps = 30.0 / self.clock.tick(100)
+            DELTA_TIME = 30 / self.clock.tick_busy_loop(60) # delta time, game is fp indipendent
 
             # Refresh screen and update sprites
             self.screen.fill((0, 0, 0))
             self.bullets.update()
             self.ships.update(pygame.key.get_pressed())
-            self.environment.update()
+            self.edge.update()
+            self.rectangles.update()
+            #self.centre.update()
             pygame.display.update()
-            #print(self.user._speed , self.user._angle, self.user._rel_max_h_speed, self.user._rel_max_v_speed, self.clock.get_fps())
+            print(self.clock.get_fps(), len(self.bullets.sprites()), DELTA_TIME)
 
         pygame.quit()
 
 
 if __name__ == "__main__":
-    interface = UI()
+    interface = Test_game((3000, 3000))
     interface.main()
