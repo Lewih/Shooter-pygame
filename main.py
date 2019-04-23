@@ -8,7 +8,7 @@ import socket
 pygame.init()
 
 # Constants
-SCREEN_SIZE = (1100, 800)
+SCREEN_SIZE = (1500, 800)
 CAMERA_X = 0
 CAMERA_Y = 0
 DB_FONT = pygame.font.SysFont("monospace", 15)
@@ -175,9 +175,10 @@ class Ship(Game_Object):
         self._controlled = controlled
     
     def __str__(self):
-        return("""Ship = {
+        return("""    Ship = {
         _position: [%f, %f],
         _speed: [%f, %f],
+        _angle: [%s]
         _acceleration: %f,
         _max_v_speed: %f,
         _max_h_speed: %f,
@@ -188,7 +189,7 @@ class Ship(Game_Object):
         _image: %s
         _camera_mode: %s
         _controlled: %d}""" % (self.rect.x, self.rect.y, self._speed[0], self._speed[1],
-                        self._acceleration, self._max_v_speed, self._max_h_speed,
+                        self._angle, self._acceleration, self._max_v_speed, self._max_h_speed,
                         self._spin, self._bullet_speed, self._fire_rate, self._bullet_timer,
                         self._image_dir, self._camera_mode, self._controlled))
 
