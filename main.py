@@ -92,6 +92,8 @@ class Game_Object(pygame.sprite.Sprite):
                            self._spin, self._angle, self._camera_mode)
 
     def hit(self, damage):
+        """hit method"""
+
         if self._life != "immortal":
             self._life -= damage
             if self._life <= 0:
@@ -134,6 +136,9 @@ class Game_Object(pygame.sprite.Sprite):
         self.rotated_image = pygame.transform.rotate(self._image, self._angle)
 
     def update(self):
+        """Overridden update method.
+        Updates sprite position and image"""
+
         global CAMERA_X, CAMERA_Y
         self._position[0] += self._speed[0] / DELTA_TIME
         self._position[1] += self._speed[1] / DELTA_TIME
