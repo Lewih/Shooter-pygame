@@ -1,4 +1,5 @@
 import math
+import random
 import threading
 import socket
 import pygame
@@ -68,7 +69,7 @@ class Game_Object(pygame.sprite.Sprite):
 
     def __init__(self, position, camera_mode="normal"):
         super().__init__()
-        self._life        = 100
+        self._life        = "immortal"
         self._speed       = [0, 0] # [x, y]
         self._angle       = 0
         self._spin        = 0
@@ -81,12 +82,20 @@ class Game_Object(pygame.sprite.Sprite):
     def __str__(self):
         return """
         game_object = {
+        _life: %s
         _position: [%f, %f]
         _speed: [%f, %f]
         _spin: %f
         _angle: %f
-        _camera: %s}""" % (self.rect.x, self.rect.y, self._speed[0], self._speed[1],
+        _camera: %s}""" % (self._life, self.rect.x, self.rect.y,
+                           self._speed[0], self._speed[1],
                            self._spin, self._angle, self._camera_mode)
+
+    def hit(self, damage):
+        if self._life != "immortal":
+            self._life -= damage
+            if self._life <= 0:
+                self.kill()
 
     def display_label(self):
         """Display object __str__ as a label in game"""
@@ -128,7 +137,7 @@ class Game_Object(pygame.sprite.Sprite):
         global CAMERA_X, CAMERA_Y
         self._position[0] += self._speed[0] / DELTA_TIME
         self._position[1] += self._speed[1] / DELTA_TIME
-        self.rect.x        = int(self._position[0])
+        self.rect.x        = int(self._position[0]) # rect attribute is int precision
         self.rect.y        = int(self._position[1])
 
         # redefine position and rotate sprite image 
@@ -149,7 +158,6 @@ class Game_Object(pygame.sprite.Sprite):
         if DEBUG:
             self.display_label()
 
-
 class Ship(Game_Object):
     """Ship game object.
 
@@ -157,9 +165,9 @@ class Ship(Game_Object):
         start_pos {float: array} -- [x, y]
         image {str} -- Ship Image directory
         acceleration {float} -- Ship acceleration
+        h_acceleration {float} -- horizontal acceleration
         spin {float} -- Ship spin
         max_speed {float} -- nominal max vertical speed
-        max_h_speed {float} -- nominal max horizontal speed
         bullet_speed {float} -- Ship bullet speed
         fire_rate {float} -- fire sleep in game tick / DELTA_TIME
         camera_mode{string} -- normal = not player object
@@ -167,16 +175,17 @@ class Ship(Game_Object):
         controlled{bool}  -- ship is controlled by user"""
     
     def __init__(self, start_pos, image, acceleration,
-                 spin, max_speed, max_h_speed, bullet_speed,
+                 h_acceleration, spin, max_speed, bullet_speed,
                  fire_rate, camera_mode='normal', controlled=False):
         self._image_dir    = image
         self._image        = pygame.image.load(image).convert_alpha()
         super().__init__(start_pos, camera_mode=camera_mode)
+        self._life         = 100.0
         self._size         = self._image.get_size()
         self._acceleration = acceleration
         self._spin         = spin
         self._max_speed  = max_speed
-        self._h_acceleration  = max_h_speed
+        self._h_acceleration  = h_acceleration
         self._bullet_speed = bullet_speed
         self._fire_rate    = fire_rate
         self._bullet_timer = 0
@@ -184,6 +193,7 @@ class Ship(Game_Object):
 
     def __str__(self):
         return("""    Ship = {
+        _life: %s,
         _position: [%f, %f],
         _speed: [%f, %f],
         _angle: [%s]
@@ -196,7 +206,7 @@ class Ship(Game_Object):
         _bullet_timer: %f,
         _image: %s
         _camera_mode: %s
-        _controlled: %d}""" % (self.rect.x, self.rect.y, self._speed[0], self._speed[1],
+        _controlled: %d}""" % (self._life, self.rect.x, self.rect.y, self._speed[0], self._speed[1],
                                self._angle, self._acceleration, self._max_speed, self._h_acceleration,
                                self._spin, self._bullet_speed, self._fire_rate, self._bullet_timer,
                                self._image_dir, self._camera_mode, self._controlled))
@@ -313,8 +323,9 @@ class Bullet(Game_Object):
             angle {float} -- angle of the vector in degrees
             bullet_speed {float} -- bullet speed"""
 
-    def __init__(self, start_pos, angle, bullet_speed):
-        self._image = pygame.image.load('Images/bullet.png').convert_alpha()
+    def __init__(self, start_pos, angle, bullet_speed,
+                 image='Images/bullet.png'):
+        self._image = pygame.image.load(image).convert_alpha()
         super().__init__(start_pos)
         self._angle = angle
         self._spin = 0
@@ -322,6 +333,12 @@ class Bullet(Game_Object):
         self._size  = self._image.get_size()
         self._speed = [self._bullet_speed * math.cos(math.radians(self._angle)), 
                        self._bullet_speed * -math.sin(math.radians(self._angle))]
+        self._damage = 1
+
+    def update(self):
+        for caught in pygame.sprite.groupcollide(INTERFACE.environment, INTERFACE.bullets, False, True):
+            caught.hit(self._damage)
+        Game_Object.update(self)
 
 
 class Surface(Game_Object):
@@ -330,21 +347,24 @@ class Surface(Game_Object):
         Arguments:
             position {array: float} -- [x, y] start position
             dimension {array: float} -- [x, y] polygon dimension
-            color {tuple} -- (R, G, B) color standard"""
+            color {tuple} -- (R, G, B) color standard
+            spin{float} -- default is 0
+            speed{array: float} -- default is [0, 0]"""
 
     def __init__(self, position, dimension, color,
-                 camera_mode="normal", spin=0, speed=[0, 0]):
+                 camera_mode="normal", spin=0, speed=[0, 0],
+                 life="immortal"):
         self._image = pygame.Surface(dimension, pygame.SRCALPHA)
         super().__init__(position, camera_mode=camera_mode)
         self._image.fill(color)
         self._size = self._image.get_size()
         self._spin = spin
         self._speed = speed
+        self._life = life
 
     def update(self):
         self._angle += self._spin / DELTA_TIME
         Game_Object.update(self)
-        self.value = pygame.sprite.groupcollide(INTERFACE.bullets, INTERFACE.edge, True, False)
 
 
 class Test_game:
@@ -365,9 +385,10 @@ class Test_game:
         self.bullets = pygame.sprite.Group()
         self.edge = pygame.sprite.Group()
         self.rectangles = pygame.sprite.Group()
+        self.environment = pygame.sprite.Group()
 
         # User
-        self.user = Ship([100, 200], 'Images/ship.png', 0.7, 10, 10.0, 0.4, 10.0, 10, camera_mode='scrolling', controlled=True)
+        self.user = Ship([100, 200], 'Images/ship.png', 0.7, 0.4, 10, 10.0, 10.0, 10, camera_mode='scrolling', controlled=True)
         CAMERA_X = 100
         CAMERA_Y = 200
         self.ships.add(self.user)
@@ -375,16 +396,21 @@ class Test_game:
         # Finalize screen
         pygame.display.set_caption("Shooter")
 
-        boundaries = [[[0, 0], [map_size[0], 20]], [[0, map_size[1]], [map_size[0], 20]], # [position], [dimension]
-                      [[0, 0], [20, map_size[1]]], [[map_size[0], 0], [20, map_size[1]]]]
+        # edge objects [[position], [dimension]]
+        boundaries = [[[0, 0], [map_size[0], 20]],
+                      [[0, map_size[1]], [map_size[0], 20]],
+                      [[0, 0], [20, map_size[1]]],
+                      [[map_size[0], 0], [20, map_size[1]]]]
         for obj in boundaries:
             item = Surface(obj[0], obj[1], (255, 0, 0))
             self.edge.add(item)
+            self.environment.add(item)
 
-        test = Surface([300, 300], [100, 100], (0, 0, 255), spin=0.5, speed=[1, 1])
-        test1 = Surface([300, 300], [100, 100], (0, 0, 255), spin=0.5)
-        self.rectangles.add(test)
-        self.rectangles.add(test1)
+        # test objects
+        for x in range(39):
+            test = Surface([random.randint(1, 2999), random.randint(1, 2999)], [100, 100], (0, 0, 255), spin=0.5, speed=[0, 0], life=5)
+            self.rectangles.add(test)
+            self.environment.add(test)
         #self.centre = Surface([0, 0], [4,4], (255, 255, 255), spin = 0, camera_mode="scrolling")
 
     def main(self):
@@ -403,11 +429,10 @@ class Test_game:
             self.screen.fill((0, 0, 0))
             self.bullets.update()
             self.ships.update(pygame.key.get_pressed())
-            self.edge.update()
-            self.rectangles.update()
+            self.environment.update()
             #self.centre.update()
             pygame.display.update()
-            print(self.clock.get_fps(), len(self.bullets.sprites()), DELTA_TIME)
+            #print(self.clock.get_fps(), len(self.bullets.sprites()), DELTA_TIME)
 
         pygame.quit()
 
