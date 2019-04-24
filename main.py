@@ -74,8 +74,8 @@ class Game_Object(pygame.sprite.Sprite):
         self._angle       = 0
         self._spin        = 0
         self.rect         = self._image.get_rect()
-        self.rect.x       = position[0]
-        self.rect.y       = position[1]
+        self.rect.centerx       = position[0]
+        self.rect.centery       = position[1]
         self._position    = [position[0], position[1]]
         self._camera_mode = camera_mode
 
@@ -87,7 +87,7 @@ class Game_Object(pygame.sprite.Sprite):
         _speed: [%f, %f]
         _spin: %f
         _angle: %f
-        _camera: %s}""" % (self._life, self.rect.x, self.rect.y,
+        _camera: %s}""" % (self._life, self.rect.centerx, self.rect.centery,
                            self._speed[0], self._speed[1],
                            self._spin, self._angle, self._camera_mode)
 
@@ -127,11 +127,11 @@ class Game_Object(pygame.sprite.Sprite):
         pivot_move   = pivot_rotate - pivot
 
         # calculate the upper left origin of the rotated image
-        self._origin = (self.rect.x - self._size[0] / 2 + min_box[0] - pivot_move[0], self.rect.y - self._size[1] / 2 - max_box[1] + pivot_move[1])
+        self._origin = (self.rect.centerx - self._size[0] / 2 + min_box[0] - pivot_move[0], self.rect.centery - self._size[1] / 2 - max_box[1] + pivot_move[1])
 
         # control whether it is an edge element
         if INTERFACE.edge.has(self): 
-            self._origin = (self.rect.x , self.rect.y)
+            self._origin = (self.rect.centerx , self.rect.centery)
 
         self.rotated_image = pygame.transform.rotate(self._image, self._angle)
 
@@ -142,15 +142,15 @@ class Game_Object(pygame.sprite.Sprite):
         global CAMERA_X, CAMERA_Y
         self._position[0] += self._speed[0] / DELTA_TIME
         self._position[1] += self._speed[1] / DELTA_TIME
-        self.rect.x        = int(self._position[0]) # rect attribute is int precision
-        self.rect.y        = int(self._position[1])
+        self.rect.centerx        = int(self._position[0]) # rect attribute is int precision
+        self.rect.centery        = int(self._position[1])
 
         # redefine position and rotate sprite image 
         self.image_handler()
 
         if self._camera_mode == 'scrolling':
-            CAMERA_X = self.rect.x
-            CAMERA_Y = self.rect.y
+            CAMERA_X = self.rect.centerx
+            CAMERA_Y = self.rect.centery
             w, h = self.rotated_image.get_size()
             self._display_label_position = ((SCREEN_SIZE[0] / 2.0) - w / 2 + 45, 10 + (SCREEN_SIZE[1] / 2.0) - h / 2)
             INTERFACE.screen.blit(self.rotated_image, ((SCREEN_SIZE[0] / 2.0) - w / 2, (SCREEN_SIZE[1] / 2.0) - h / 2))
@@ -211,7 +211,7 @@ class Ship(Game_Object):
         _bullet_timer: %f,
         _image: %s
         _camera_mode: %s
-        _controlled: %d}""" % (self._life, self.rect.x, self.rect.y, self._speed[0], self._speed[1],
+        _controlled: %d}""" % (self._life, self.rect.centerx, self.rect.centery, self._speed[0], self._speed[1],
                                self._angle, self._acceleration, self._max_speed, self._h_acceleration,
                                self._spin, self._bullet_speed, self._fire_rate, self._bullet_timer,
                                self._image_dir, self._camera_mode, self._controlled))
@@ -301,7 +301,7 @@ class Ship(Game_Object):
 
         if pressedKeys[pygame.K_SPACE] and self._bullet_timer <= 0:
             self._bullet_timer = self._fire_rate
-            new_bullet = Bullet((self.rect.x, self.rect.y), self._angle, self._bullet_speed)
+            new_bullet = Bullet((self.rect.centerx, self.rect.centery), self._angle, self._bullet_speed)
             INTERFACE.bullets.add(new_bullet)
 
     def update(self, pressedKeys):
