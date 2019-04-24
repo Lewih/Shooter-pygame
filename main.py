@@ -204,7 +204,7 @@ class Ship(Game_Object):
         _angle: [%s]
         _acceleration: %f,
         _max_speed: %f,
-        _max_h_speed: %f,
+        _h_acceleration: %f,
         _spin: %f,
         _bullet_speed: %f
         _fire_rate: %f,
