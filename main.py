@@ -12,7 +12,7 @@ SCREEN_SIZE = (1300, 800)
 CAMERA_X = 0
 CAMERA_Y = 0
 DB_FONT = pygame.font.SysFont("monospace", 15)
-DEBUG = True
+DEBUG = False
 
 
 class Server(threading.Thread):
@@ -81,12 +81,14 @@ class Game_Object(pygame.sprite.Sprite):
     def __str__(self):
         return """
         game_object = {
-        _life: %s
-        _position: [%f, %f]
-        _speed: [%f, %f]
-        _spin: %f
-        _angle: %f
-        _camera: %s}""" % (self._life, self.rect.centerx, self.rect.centery,
+        _life: %s,
+        _rect: %s,
+        _origin: %s,
+        _position: %s,
+        _speed: [%f, %f],
+        _spin: %f,
+        _angle: %f,
+        _camera: %s}""" % (self._life, self.rect, self._origin, self._position,
                            self._speed[0], self._speed[1],
                            self._spin, self._angle, self._camera_mode)
 
@@ -133,41 +135,43 @@ class Game_Object(pygame.sprite.Sprite):
         pivot_move   = pivot_rotate - pivot
 
         # calculate the upper left origin of the rotated image
-        self._origin = (self._size[0] / 2 + min_box[0] - pivot_move[0], self._size[1] / 2 - max_box[1] + pivot_move[1])
+        self._origin = (self.rect.centerx - self._size[0] / 2 + min_box[0] - pivot_move[0], self.rect.centery - self._size[1] / 2 - max_box[1] + pivot_move[1])
 
         self.rotated_image = pygame.transform.rotate(self._image, self._angle)
+        self.rect = self.rotated_image.get_rect()
 
     def update(self):
         """Overridden update method.
         Updates sprite position and image"""
-
-        global CAMERA_X, CAMERA_Y
-        self._position[0] += self._speed[0] / DELTA_TIME
-        self._position[1] += self._speed[1] / DELTA_TIME
-        self.rect.centerx  = int(self._position[0]) # rect attribute is int precision
-        self.rect.centery  = int(self._position[1])
-
-        # control whether it is an edge element
-        if GAME.edge.has(self): 
-            self._origin = (self.rect.centerx , self.rect.centery)
 
         # redefine position and rotate sprite image 
         if self._need_update:
             self.image_handler()
             self._need_update = False
 
+        self._position[0] += self._speed[0] / DELTA_TIME
+        self._position[1] += self._speed[1] / DELTA_TIME
+
+        # control whether it is an edge element
+        self.rect.centerx = int(self._position[0])
+        self.rect.centery = int(self._position[1])
+
         if self._camera_mode == 'scrolling':
-            CAMERA_X = self.rect.centerx
-            CAMERA_Y = self.rect.centery
+            global CAMERA_X, CAMERA_Y
+            CAMERA_X = int(self._position[0])
+            CAMERA_Y = int(self._position[1])
             w, h = self.rotated_image.get_size()
-            self._display_label_position = ((SCREEN_SIZE[0] / 2.0) - w / 2 + 45, 10 + (SCREEN_SIZE[1] / 2.0) - h / 2)
-            GAME.screen.blit(self.rotated_image, ((SCREEN_SIZE[0] / 2.0) - w / 2, (SCREEN_SIZE[1] / 2.0) - h / 2))
+            x = (SCREEN_SIZE[0] / 2.0) - w / 2
+            y = (SCREEN_SIZE[1] / 2.0) - h / 2
+            
+            self._display_label_position = (x + 45, y)
+            GAME.screen.blit(self.rotated_image, (x, y))
 
         elif self._camera_mode == "normal":
-            self._display_label_position = ((SCREEN_SIZE[0] / 2) - ((CAMERA_X - self.rect.centerx - self._origin[0])),
-                                            (SCREEN_SIZE[1] / 2) - ((CAMERA_Y - self.rect.centery - self._origin[1])) - 30)
-            GAME.screen.blit(self.rotated_image, ((SCREEN_SIZE[0] / 2) - ((CAMERA_X - self.rect.centerx - self._origin[0])),
-                                                       (SCREEN_SIZE[1] / 2) - ((CAMERA_Y - self.rect.centery - self._origin[1]))))
+            self._display_label_position = ((SCREEN_SIZE[0] / 2) - ((CAMERA_X - self._origin[0])),
+                                            (SCREEN_SIZE[1] / 2) - ((CAMERA_Y - self._origin[1])) - 30)
+            GAME.screen.blit(self.rotated_image, ((SCREEN_SIZE[0] / 2) - ((CAMERA_X - self._origin[0])),
+                                                       (SCREEN_SIZE[1] / 2) - ((CAMERA_Y - self._origin[1]))))
         if DEBUG:
             self.display_label()
 
@@ -208,9 +212,10 @@ class Ship(Game_Object):
     def __str__(self):
         return("""    Ship = {
         _life: %s,
-        _position: [%f, %f],
+        _rect: %s,
+        _position: %s,
         _speed: [%f, %f],
-        _angle: [%s]
+        _angle: %s,
         _acceleration: %f,
         _max_speed: %f,
         _h_acceleration: %f,
@@ -218,9 +223,9 @@ class Ship(Game_Object):
         _bullet_speed: %f
         _fire_rate: %f,
         _bullet_timer: %f,
-        _image: %s
-        _camera_mode: %s
-        _controlled: %d}""" % (self._life, self.rect.centerx, self.rect.centery, self._speed[0], self._speed[1],
+        _image: %s,
+        _camera_mode: %s,
+        _controlled: %d}""" % (self._life, self.rect, self._position,self._speed[0], self._speed[1],
                                self._angle, self._acceleration, self._max_speed, self._h_acceleration,
                                self._spin, self._bullet_speed, self._fire_rate, self._bullet_timer,
                                self._image_dir, self._camera_mode, self._controlled))
@@ -310,7 +315,7 @@ class Ship(Game_Object):
 
         if pressedKeys[pygame.K_SPACE] and self._bullet_timer <= 0:
             self._bullet_timer = self._fire_rate
-            new_bullet = Bullet((self.rect.centerx, self.rect.centery), self._angle, self._bullet_speed)
+            new_bullet = Bullet(self._position, self._angle, self._bullet_speed)
             GAME.bullets.add(new_bullet)
 
     def update(self, pressedKeys):
@@ -350,6 +355,7 @@ class Bullet(Game_Object):
         self._damage = 1
 
     def update(self):
+        self._need_update = True
         for caught in pygame.sprite.spritecollide(self, GAME.targets, False):
             self.kill()
             for x in range(20):
@@ -384,6 +390,20 @@ class Surface(Game_Object):
     def update(self):
         self.spin(self._spin / DELTA_TIME)
         Game_Object.update(self)
+
+
+class Edge(Surface):
+    def __init__(self, position, dimension, color):
+        super().__init__(position, dimension, color)
+        self.rect = self._image.get_rect(topleft=position)
+        self._need_update = False
+        self.rotated_image = self._image
+
+    def update(self):
+        self._display_label_position = ((SCREEN_SIZE[0] / 2) - ((CAMERA_X - self.rect.x)),
+                                        (SCREEN_SIZE[1] / 2) - ((CAMERA_Y - self.rect.y)) - 30)
+        GAME.screen.blit(self.rotated_image, ((SCREEN_SIZE[0] / 2) - ((CAMERA_X - self.rect.x)),
+                                              (SCREEN_SIZE[1] / 2) - ((CAMERA_Y - self.rect.y))))
 
 
 class Shine(Surface):
@@ -455,18 +475,20 @@ class Test_game:
                       [[0, 0], [20, map_size[1]]],
                       [[map_size[0], 0], [20, map_size[1]]]]
         for obj in boundaries:
-            item = Surface(obj[0], obj[1], (255, 0, 0))
+            item = Edge(obj[0], obj[1], (255, 0, 0))
             self.edge.add(item)
             self.environment.add(item)
             self.targets.add(item)
 
         # test objects
-        for x in range(100):
-            test = Surface([random.randint(1, 2999), random.randint(1, 2999)], [100, 100], (0, 0, 255), spin=1, speed=[0, 0], life=5)
+        for x in range(30):
+            test = Surface([random.randint(1, map_size[0]), random.randint(1, map_size[1])], [100, 100], (0, 0, 255), spin=1, speed=[0, 0], life=5)
             self.rectangles.add(test)
             self.environment.add(test)
             self.targets.add(test)
         #self.centre = Surface([0, 0], [4,4], (255, 255, 255), spin = 0, camera_mode="scrolling")
+        test = Surface([0, 0], [100, 100], (0, 0, 255), spin=1, speed=[0, 0], life=5)
+        self.environment.add(test)
 
         # Starry sky
         if not DEBUG:
@@ -489,16 +511,19 @@ class Test_game:
 
             # Refresh screen and update sprites
             self.screen.fill((0, 0, 0))
+            self.starry_sky.update()
             self.bullets.update()
             self.ships.update(pygame.key.get_pressed())
             self.environment.update()
-            self.starry_sky.update()
             #self.centre.update()
+            string = str(self.clock.get_fps()) + str(len(self.bullets.sprites())) + str(DELTA_TIME)
+            display_label = DB_FONT.render(string ,1 , (255, 255, 0))
+            GAME.screen.blit(display_label, (0, 0))
             pygame.display.update()
-            print(self.clock.get_fps(), len(self.bullets.sprites()), DELTA_TIME)
+            #print(self.clock.get_fps(), len(self.bullets.sprites()), DELTA_TIME)
 
         pygame.quit()
 
 
-GAME = Test_game((3000, 3000))
+GAME = Test_game((1500, 1500))
 GAME.main()
