@@ -12,7 +12,7 @@ SCREEN_SIZE = (1300, 800)
 CAMERA_X = 0
 CAMERA_Y = 0
 DB_FONT = pygame.font.SysFont("monospace", 15)
-DEBUG = False
+DEBUG = True
 
 
 class Server(threading.Thread):
@@ -73,9 +73,7 @@ class Game_Object(pygame.sprite.Sprite):
         self._speed       = [0, 0] # [x, y]
         self._angle       = 0
         self._spin        = 0
-        self.rect         = self._image.get_rect()
-        self.rect.centerx       = position[0]
-        self.rect.centery       = position[1]
+        self.rect         = self._image.get_rect(center=position)
         self._position    = [position[0], position[1]]
         self._camera_mode = camera_mode
         self._need_update = True
@@ -137,10 +135,6 @@ class Game_Object(pygame.sprite.Sprite):
         # calculate the upper left origin of the rotated image
         self._origin = (self._size[0] / 2 + min_box[0] - pivot_move[0], self._size[1] / 2 - max_box[1] + pivot_move[1])
 
-        # control whether it is an edge element
-        if GAME.edge.has(self): 
-            self._origin = (self.rect.centerx , self.rect.centery)
-
         self.rotated_image = pygame.transform.rotate(self._image, self._angle)
 
     def update(self):
@@ -152,6 +146,10 @@ class Game_Object(pygame.sprite.Sprite):
         self._position[1] += self._speed[1] / DELTA_TIME
         self.rect.centerx  = int(self._position[0]) # rect attribute is int precision
         self.rect.centery  = int(self._position[1])
+
+        # control whether it is an edge element
+        if GAME.edge.has(self): 
+            self._origin = (self.rect.centerx , self.rect.centery)
 
         # redefine position and rotate sprite image 
         if self._need_update:
@@ -471,10 +469,11 @@ class Test_game:
         #self.centre = Surface([0, 0], [4,4], (255, 255, 255), spin = 0, camera_mode="scrolling")
 
         # Starry sky
-        for x in range(1000):
-                star = Stars((random.randint(0, self.map_size[0]),
-                             random.randint(0, self.map_size[1])))
-                self.starry_sky.add(star)
+        if not DEBUG:
+            for x in range(1000):
+                    star = Stars((random.randint(0, self.map_size[0]),
+                                random.randint(0, self.map_size[1])))
+                    self.starry_sky.add(star)
 
     def main(self):
         global DELTA_TIME
