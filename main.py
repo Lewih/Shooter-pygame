@@ -12,7 +12,7 @@ SCREEN_SIZE = (1300, 800)
 CAMERA_X = 0
 CAMERA_Y = 0
 DB_FONT = pygame.font.SysFont("monospace", 15)
-DEBUG = True
+DEBUG = False
 
 
 class Server(threading.Thread):
@@ -42,7 +42,7 @@ class Server(threading.Thread):
             self.server.close()
 
         else:
-            self.send(INTERFACE.user.str)
+            self.send(GAME.user.str)
 
     def run(self):
         print('\nwaiting for new connection...')
@@ -78,6 +78,7 @@ class Game_Object(pygame.sprite.Sprite):
         self.rect.centery       = position[1]
         self._position    = [position[0], position[1]]
         self._camera_mode = camera_mode
+        self._need_update = True
 
     def __str__(self):
         return """
@@ -99,6 +100,13 @@ class Game_Object(pygame.sprite.Sprite):
             if self._life <= 0:
                 self.kill()
 
+    def spin(self, value):
+        """spin method"""
+
+        if value != 0:
+            self._angle += value
+            self._need_update = True
+
     def display_label(self):
         """Display object __str__ as a label in game"""
 
@@ -109,7 +117,7 @@ class Game_Object(pygame.sprite.Sprite):
         for string in values:
             offset += 15
             display_label = DB_FONT.render(string ,1, (255, 255, 0))
-            INTERFACE.screen.blit(display_label, (self._display_label_position[0], 
+            GAME.screen.blit(display_label, (self._display_label_position[0], 
                                                   self._display_label_position[1] + offset))
 
     def image_handler(self):
@@ -127,10 +135,10 @@ class Game_Object(pygame.sprite.Sprite):
         pivot_move   = pivot_rotate - pivot
 
         # calculate the upper left origin of the rotated image
-        self._origin = (self.rect.centerx - self._size[0] / 2 + min_box[0] - pivot_move[0], self.rect.centery - self._size[1] / 2 - max_box[1] + pivot_move[1])
+        self._origin = (self._size[0] / 2 + min_box[0] - pivot_move[0], self._size[1] / 2 - max_box[1] + pivot_move[1])
 
         # control whether it is an edge element
-        if INTERFACE.edge.has(self): 
+        if GAME.edge.has(self): 
             self._origin = (self.rect.centerx , self.rect.centery)
 
         self.rotated_image = pygame.transform.rotate(self._image, self._angle)
@@ -142,26 +150,29 @@ class Game_Object(pygame.sprite.Sprite):
         global CAMERA_X, CAMERA_Y
         self._position[0] += self._speed[0] / DELTA_TIME
         self._position[1] += self._speed[1] / DELTA_TIME
-        self.rect.centerx        = int(self._position[0]) # rect attribute is int precision
-        self.rect.centery        = int(self._position[1])
+        self.rect.centerx  = int(self._position[0]) # rect attribute is int precision
+        self.rect.centery  = int(self._position[1])
 
         # redefine position and rotate sprite image 
-        self.image_handler()
+        if self._need_update:
+            self.image_handler()
+            self._need_update = False
 
         if self._camera_mode == 'scrolling':
             CAMERA_X = self.rect.centerx
             CAMERA_Y = self.rect.centery
             w, h = self.rotated_image.get_size()
             self._display_label_position = ((SCREEN_SIZE[0] / 2.0) - w / 2 + 45, 10 + (SCREEN_SIZE[1] / 2.0) - h / 2)
-            INTERFACE.screen.blit(self.rotated_image, ((SCREEN_SIZE[0] / 2.0) - w / 2, (SCREEN_SIZE[1] / 2.0) - h / 2))
+            GAME.screen.blit(self.rotated_image, ((SCREEN_SIZE[0] / 2.0) - w / 2, (SCREEN_SIZE[1] / 2.0) - h / 2))
 
         elif self._camera_mode == "normal":
-            self._display_label_position = ((SCREEN_SIZE[0] / 2) - ((CAMERA_X - self._origin[0])),
-                                            (SCREEN_SIZE[1] / 2) - ((CAMERA_Y - self._origin[1])) - 30)
-            INTERFACE.screen.blit(self.rotated_image, ((SCREEN_SIZE[0] / 2) - ((CAMERA_X - self._origin[0])),
-                                                       (SCREEN_SIZE[1] / 2) - ((CAMERA_Y - self._origin[1]))))
+            self._display_label_position = ((SCREEN_SIZE[0] / 2) - ((CAMERA_X - self.rect.centerx - self._origin[0])),
+                                            (SCREEN_SIZE[1] / 2) - ((CAMERA_Y - self.rect.centery - self._origin[1])) - 30)
+            GAME.screen.blit(self.rotated_image, ((SCREEN_SIZE[0] / 2) - ((CAMERA_X - self.rect.centerx - self._origin[0])),
+                                                       (SCREEN_SIZE[1] / 2) - ((CAMERA_Y - self.rect.centery - self._origin[1]))))
         if DEBUG:
             self.display_label()
+
 
 class Ship(Game_Object):
     """Ship game object.
@@ -291,10 +302,10 @@ class Ship(Game_Object):
                     self._speed[1] -= self._h_acceleration * -sin90 / DELTA_TIME
 
         if pressedKeys[pygame.K_LEFT]:
-            self._angle += self._spin / DELTA_TIME
+            self.spin(self._spin / DELTA_TIME)
 
         if pressedKeys[pygame.K_RIGHT]:
-            self._angle -= self._spin / DELTA_TIME
+            self.spin(-self._spin / DELTA_TIME)
 
         if pressedKeys[pygame.K_w]:
             self._speed = [0, 0]
@@ -302,7 +313,7 @@ class Ship(Game_Object):
         if pressedKeys[pygame.K_SPACE] and self._bullet_timer <= 0:
             self._bullet_timer = self._fire_rate
             new_bullet = Bullet((self.rect.centerx, self.rect.centery), self._angle, self._bullet_speed)
-            INTERFACE.bullets.add(new_bullet)
+            GAME.bullets.add(new_bullet)
 
     def update(self, pressedKeys):
         """Overriden pygame.sprite.sprite method.
@@ -341,7 +352,11 @@ class Bullet(Game_Object):
         self._damage = 1
 
     def update(self):
-        for caught in pygame.sprite.groupcollide(INTERFACE.environment, INTERFACE.bullets, False, True):
+        for caught in pygame.sprite.spritecollide(self, GAME.targets, False):
+            self.kill()
+            for x in range(20):
+                shine = Shine([self.rect.centerx, self.rect.centery], self._angle)
+                GAME.environment.add(shine)
             caught.hit(self._damage)
         Game_Object.update(self)
 
@@ -361,6 +376,7 @@ class Surface(Game_Object):
                  life="immortal"):
         self._image = pygame.Surface(dimension, pygame.SRCALPHA)
         super().__init__(position, camera_mode=camera_mode)
+        self._color = color
         self._image.fill(color)
         self._size = self._image.get_size()
         self._spin = spin
@@ -368,8 +384,39 @@ class Surface(Game_Object):
         self._life = life
 
     def update(self):
-        self._angle += self._spin / DELTA_TIME
+        self.spin(self._spin / DELTA_TIME)
         Game_Object.update(self)
+
+
+class Shine(Surface):
+    """light and shines"""
+
+    def __init__(self, position, angle, color=(155, 155, 0)):
+        super().__init__(position, [5, 2], color)
+        self._angle = random.randint(0, 360)
+        self._speed = [(- math.cos(math.radians(angle))) * random.randint(0, 7),
+                       (math.sin(math.radians(angle))) * random.randint(0, 7)] 
+        self._time2live = random.randint(5, 100)
+        self._spin = random.randint(-2, -2)
+    
+    def update(self):
+        self._time2live -= 1 / DELTA_TIME
+        if self._time2live < 0:
+            self.kill()
+        Surface.update(self)
+
+
+class Stars(Surface):
+    """background stars"""
+
+    def __init__(self, position, color=(255, 255, 255)):
+        super().__init__(position, [1, 1], color)
+
+
+class Debris(Game_Object):
+    """Polygon shape object"""
+
+    pass
 
 
 class Test_game:
@@ -391,6 +438,9 @@ class Test_game:
         self.edge = pygame.sprite.Group()
         self.rectangles = pygame.sprite.Group()
         self.environment = pygame.sprite.Group()
+        self.starry_sky = pygame.sprite.Group()
+        self.targets = pygame.sprite.Group()
+        self.all = pygame.sprite.Group()
 
         # User
         self.user = Ship([100, 200], 'Images/ship.png', 0.7, 0.4, 10, 10.0, 10.0, 10, camera_mode='scrolling', controlled=True)
@@ -410,13 +460,21 @@ class Test_game:
             item = Surface(obj[0], obj[1], (255, 0, 0))
             self.edge.add(item)
             self.environment.add(item)
+            self.targets.add(item)
 
         # test objects
-        for x in range(39):
-            test = Surface([random.randint(1, 2999), random.randint(1, 2999)], [100, 100], (0, 0, 255), spin=0.5, speed=[0, 0], life=5)
+        for x in range(100):
+            test = Surface([random.randint(1, 2999), random.randint(1, 2999)], [100, 100], (0, 0, 255), spin=1, speed=[0, 0], life=5)
             self.rectangles.add(test)
             self.environment.add(test)
+            self.targets.add(test)
         #self.centre = Surface([0, 0], [4,4], (255, 255, 255), spin = 0, camera_mode="scrolling")
+
+        # Starry sky
+        for x in range(1000):
+                star = Stars((random.randint(0, self.map_size[0]),
+                             random.randint(0, self.map_size[1])))
+                self.starry_sky.add(star)
 
     def main(self):
         global DELTA_TIME
@@ -435,13 +493,13 @@ class Test_game:
             self.bullets.update()
             self.ships.update(pygame.key.get_pressed())
             self.environment.update()
+            self.starry_sky.update()
             #self.centre.update()
             pygame.display.update()
-            #print(self.clock.get_fps(), len(self.bullets.sprites()), DELTA_TIME)
+            print(self.clock.get_fps(), len(self.bullets.sprites()), DELTA_TIME)
 
         pygame.quit()
 
 
-if __name__ == "__main__":
-    INTERFACE = Test_game((3000, 3000))
-    INTERFACE.main()
+GAME = Test_game((3000, 3000))
+GAME.main()
