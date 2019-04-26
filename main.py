@@ -467,7 +467,7 @@ class Test_game:
         self.all = pygame.sprite.Group()
 
         # User
-        self.user = Ship([100, 200], 'Images/ship.png', 0.7, 0.4, 10, 10.0, 10.0, 10, camera_mode='scrolling', controlled=True)
+        self.user = Ship([100, 200], 'Images/ship.png', 0.7, 0.4, 10, 10.0, 10.0, 7, camera_mode='scrolling', controlled=True)
         CAMERA_X = 100
         CAMERA_Y = 200
         self.ships.add(self.user)
@@ -522,8 +522,7 @@ class Test_game:
             self.ships.update(pygame.key.get_pressed())
             self.environment.update()
             #self.centre.update()
-            string = str(self.clock.get_fps()) + str(len(self.bullets.sprites())) + str(DELTA_TIME)
-            display_label = DB_FONT.render(string ,1 , (255, 255, 0))
+            display_label = DB_FONT.render("fps: " + str(self.clock.get_fps()), 1, (255, 255, 0))
             GAME.screen.blit(display_label, (0, 0))
             pygame.display.update()
             #print(self.clock.get_fps(), len(self.bullets.sprites()), DELTA_TIME)
