@@ -41,7 +41,6 @@ class Game_Object(pygame.sprite.Sprite):
         self._need_update = True
 
     def __str__(self):
-
         return """
         game_object = {
         _life: %s,
@@ -56,7 +55,7 @@ class Game_Object(pygame.sprite.Sprite):
                            self._spin, self._angle, self._camera_mode)
 
     def hit(self, damage):
-        """hit the object, life drops according to damage"""
+        """hit the object, life drops according to damage {int}"""
 
         if self._life != "immortal":
             self._life -= damage
@@ -339,7 +338,8 @@ class Bullet(Game_Object):
         Arguments:
             start_pos {array: float} -- [x, y] start position
             angle {float} -- angle of the vector in degrees
-            bullet_speed {float} -- bullet speed"""
+            bullet_speed {float} -- bullet speed
+            image {string} -- default is standard bullet"""
 
     def __init__(self, start_pos, angle, bullet_speed,
                  image='Images/bullet.png'):
@@ -369,8 +369,11 @@ class Surface(Game_Object):
             position {array: float} -- [x, y] start position
             dimension {array: float} -- [x, y] polygon dimension
             color {tuple} -- (R, G, B) color standard
-            spin{float} -- default is 0
-            speed{array: float} -- default is [0, 0]"""
+            need_max_rect {bool} -- True to permit collisions TODO
+            camera_mode {string} -- same as Game_Object
+            spin {float} -- default is 0
+            speed {array: float} -- default is [0, 0]
+            life {float} -- default is immortal object"""
 
     def __init__(self, position, dimension, color, need_max_rect,
                  camera_mode="normal", spin=0, speed=[0, 0],
@@ -422,7 +425,7 @@ class Shine(Surface):
         self._time2live -= 1 / DELTA_TIME
         if self._time2live < 0:
             self.kill()
-        Game_Object.update(self) # no spin for shines, performance issue TODO
+        Game_Object.update(self) # no spin for shines due to performance issue TODO
 
 
 class Stars(Surface):
@@ -436,6 +439,7 @@ class Stars(Surface):
 
 
 class Test_game:
+    """Test game with some sprites and basic settings"""
 
     def __init__(self, map_size):
         global SCREEN_SIZE, CAMERA_X, CAMERA_Y
@@ -520,5 +524,6 @@ class Test_game:
         pygame.quit()
 
 
-GAME = Test_game((1500, 1500))
-GAME.main()
+if __name__ == "__main__":
+    GAME = Test_game((1500, 1500))
+    GAME.main()
