@@ -407,7 +407,7 @@ class Edge(Surface):
         self._display_label_position = ((SCREEN_SIZE[0] / 2) - ((CAMERA_X - self.rect.x)),
                                         (SCREEN_SIZE[1] / 2) - ((CAMERA_Y - self.rect.y)) - 30)
         GAME.screen.blit(self._image, ((SCREEN_SIZE[0] / 2) - ((CAMERA_X - self.rect.x)),
-                                              (SCREEN_SIZE[1] / 2) - ((CAMERA_Y - self.rect.y))))
+                                       (SCREEN_SIZE[1] / 2) - ((CAMERA_Y - self.rect.y))))
 
 
 class Shine(Surface):
@@ -416,7 +416,7 @@ class Shine(Surface):
     def __init__(self, position, angle, spin=0, dimension=[5, 2], color=(155, 155, 0)):
         super().__init__(position, dimension, color, False)
         self._angle = random.randint(0, 360)
-        self._speed = [(- math.cos(math.radians(angle))) * random.randint(0, 7) + random.uniform(-1, 1),
+        self._speed = [(-math.cos(math.radians(angle))) * random.randint(0, 7) + random.uniform(-1, 1),
                        (math.sin(math.radians(angle))) * random.randint(0, 7) + random.uniform(-1, 1)] 
         self._time2live = random.randint(5, 100)
         self._spin = spin
@@ -509,7 +509,8 @@ class Test_game:
                 if event.type == pygame.QUIT:
                     done = True
 
-            DELTA_TIME = 30 / self.clock.tick_busy_loop(60) # delta time, game is fp indipendent
+            # delta time, game is frame rate indipendent
+            DELTA_TIME = 30 / self.clock.tick_busy_loop(60)
 
             # Refresh screen and update sprites
             self.screen.fill((0, 0, 0))
