@@ -105,8 +105,8 @@ class Game_Object(pygame.sprite.Sprite):
         for string in values:
             offset += 15
             display_label = DB_FONT.render(string, 1, (255, 255, 0))
-            GAME.screen.blit(display_label, (self._display_label_position[0], 
-                                             self._display_label_position[1] + offset))
+            GAME.screen.blit(display_label, (self.label_position[0], 
+                                             self.label_position[1] + offset))
 
     def display_rect(self):
         pass #TODO
@@ -123,7 +123,7 @@ class Game_Object(pygame.sprite.Sprite):
                         max(box_rotate, key=lambda p: p[1])[1])
 
         # calculate the translation of the pivot 
-        pivot = pygame.math.Vector2(self._size[0] / 2 , -self._size[1] / 2)
+        pivot = pygame.math.Vector2(self._size[0] / 2, -self._size[1] / 2)
         pivot_rotate = pivot.rotate(self._angle)
         self.pivot_move = pivot_rotate - pivot
 
@@ -140,7 +140,6 @@ class Game_Object(pygame.sprite.Sprite):
 
         self._position[0] += self._speed[0] / DELTA_TIME
         self._position[1] += self._speed[1] / DELTA_TIME
-
         self.rect.centerx = int(self._position[0])
         self.rect.centery = int(self._position[1])
 
@@ -151,16 +150,17 @@ class Game_Object(pygame.sprite.Sprite):
             w, h = self.rotated_image.get_size()
             x = (SCREEN_SIZE[0] / 2.0) - w / 2
             y = (SCREEN_SIZE[1] / 2.0) - h / 2
-            
-            self._display_label_position = (x + 45, y)
+            self.label_position = (x + 45, y)
+
             GAME.screen.blit(self.rotated_image, (x, y))
 
         elif self._camera_mode == "normal" and self.is_in_screen():
              # calculate the upper left origin of the rotated image
             self._origin = (self._position[0] - self._size[0] / 2 + self.min_box[0] - self.pivot_move[0],
                             self._position[1] - self._size[1] / 2 - self.max_box[1] + self.pivot_move[1])
-            self._display_label_position = ((SCREEN_SIZE[0] / 2) - ((CAMERA_X - self._origin[0])),
-                                            (SCREEN_SIZE[1] / 2) - ((CAMERA_Y - self._origin[1])) - 30)
+            self.label_position = ((SCREEN_SIZE[0] / 2) - ((CAMERA_X - self._origin[0])),
+                                   (SCREEN_SIZE[1] / 2) - ((CAMERA_Y - self._origin[1])) - 30)
+
             GAME.screen.blit(self.rotated_image, ((SCREEN_SIZE[0] / 2) - ((CAMERA_X - self._origin[0])),
                                                   (SCREEN_SIZE[1] / 2) - ((CAMERA_Y - self._origin[1]))))
         if DEBUG:
@@ -229,11 +229,11 @@ class Ship(Game_Object):
         cos90 = math.cos(math.radians(self._angle + 90))
         sin90 = math.sin(math.radians(self._angle + 90))
 
-        self._rel_max_speed = [self._max_speed * cos, 
-                               self._max_speed * -sin]
+        self.rel_max_speed = [self._max_speed * cos, 
+                              self._max_speed * -sin]
 
-        self._rel_max_h_speed = [self._max_speed * cos90, 
-                                 self._max_speed * -sin90]
+        self.rel_max_h_speed = [self._max_speed * cos90, 
+                                self._max_speed * -sin90]
 
         if pressedKeys[pygame.K_UP]:
             shine = Shine([self.rect.centerx, self.rect.centery],
@@ -241,63 +241,63 @@ class Ship(Game_Object):
             GAME.environment.add(shine)
             GAME.all.add(shine)
 
-            if self._rel_max_speed[0] > 0:
-                if self._speed[0] <= self._rel_max_speed[0]:
+            if self.rel_max_speed[0] > 0:
+                if self._speed[0] <= self.rel_max_speed[0]:
                     self._speed[0] += self._acceleration * cos / DELTA_TIME
             else:
-                if self._speed[0] >= self._rel_max_speed[0]:
+                if self._speed[0] >= self.rel_max_speed[0]:
                     self._speed[0] += self._acceleration * cos / DELTA_TIME
 
-            if self._rel_max_speed[1] > 0:
-                if self._speed[1] <= self._rel_max_speed[1]:
+            if self.rel_max_speed[1] > 0:
+                if self._speed[1] <= self.rel_max_speed[1]:
                     self._speed[1] += self._acceleration * -sin / DELTA_TIME
             else:
-                if self._speed[1] >= self._rel_max_speed[1]:
+                if self._speed[1] >= self.rel_max_speed[1]:
                     self._speed[1] += self._acceleration * -sin / DELTA_TIME
 
         elif pressedKeys[pygame.K_DOWN]:
-            if self._rel_max_speed[0] > 0:
-                if self._speed[0] >= -self._rel_max_speed[0]:
+            if self.rel_max_speed[0] > 0:
+                if self._speed[0] >= -self.rel_max_speed[0]:
                     self._speed[0] -= self._acceleration * cos / DELTA_TIME
             else:
-                if self._speed[0] <= -self._rel_max_speed[0]:
+                if self._speed[0] <= -self.rel_max_speed[0]:
                     self._speed[0] -= self._acceleration * cos / DELTA_TIME
 
-            if self._rel_max_speed[1] > 0:
-                if self._speed[1] >= -self._rel_max_speed[1]:
+            if self.rel_max_speed[1] > 0:
+                if self._speed[1] >= -self.rel_max_speed[1]:
                     self._speed[1] -= self._acceleration * -sin / DELTA_TIME
             else:
-                if self._speed[1] <= -self._rel_max_speed[1]:
+                if self._speed[1] <= -self.rel_max_speed[1]:
                     self._speed[1] -= self._acceleration * -sin / DELTA_TIME
 
         if pressedKeys[pygame.K_q]:
-            if self._rel_max_h_speed[0] > 0:
-                if self._speed[0] <= self._rel_max_h_speed[0]:
+            if self.rel_max_h_speed[0] > 0:
+                if self._speed[0] <= self.rel_max_h_speed[0]:
                     self._speed[0] += self._h_acceleration * cos90 / DELTA_TIME
             else:
-                if self._speed[0] >= self._rel_max_h_speed[0]:
+                if self._speed[0] >= self.rel_max_h_speed[0]:
                     self._speed[0] += self._h_acceleration * cos90 / DELTA_TIME
 
-            if self._rel_max_h_speed[1] > 0:
-                if self._speed[1] <= self._rel_max_h_speed[1]:
+            if self.rel_max_h_speed[1] > 0:
+                if self._speed[1] <= self.rel_max_h_speed[1]:
                     self._speed[1] += self._h_acceleration * -sin90 / DELTA_TIME
             else:
-                if self._speed[1] >= self._rel_max_h_speed[1]:
+                if self._speed[1] >= self.rel_max_h_speed[1]:
                     self._speed[1] += self._h_acceleration * -sin90 / DELTA_TIME
 
         elif pressedKeys[pygame.K_e]:
-            if self._rel_max_h_speed[0] > 0:
-                if self._speed[0] >= -self._rel_max_h_speed[0]:
+            if self.rel_max_h_speed[0] > 0:
+                if self._speed[0] >= -self.rel_max_h_speed[0]:
                     self._speed[0] -= self._h_acceleration * cos90 / DELTA_TIME
             else:
-                if self._speed[0] <= -self._rel_max_h_speed[0]:
+                if self._speed[0] <= -self.rel_max_h_speed[0]:
                     self._speed[0] -= self._h_acceleration * cos90 / DELTA_TIME
 
-            if self._rel_max_h_speed[1] > 0:
-                if self._speed[1] >= -self._rel_max_h_speed[1]:
+            if self.rel_max_h_speed[1] > 0:
+                if self._speed[1] >= -self.rel_max_h_speed[1]:
                     self._speed[1] -= self._h_acceleration * -sin90 / DELTA_TIME
             else:
-                if self._speed[1] <= -self._rel_max_h_speed[1]:
+                if self._speed[1] <= -self.rel_max_h_speed[1]:
                     self._speed[1] -= self._h_acceleration * -sin90 / DELTA_TIME
 
         if pressedKeys[pygame.K_LEFT]:
@@ -410,8 +410,8 @@ class Edge(Surface):
         self._need_update = False
 
     def update(self):
-        self._display_label_position = ((SCREEN_SIZE[0] / 2) - ((CAMERA_X - self.rect.x)),
-                                        (SCREEN_SIZE[1] / 2) - ((CAMERA_Y - self.rect.y)) - 30)
+        self.label_position = ((SCREEN_SIZE[0] / 2) - ((CAMERA_X - self.rect.x)),
+                               (SCREEN_SIZE[1] / 2) - ((CAMERA_Y - self.rect.y)) - 30)
         GAME.screen.blit(self._image, ((SCREEN_SIZE[0] / 2) - ((CAMERA_X - self.rect.x)),
                                        (SCREEN_SIZE[1] / 2) - ((CAMERA_Y - self.rect.y))))
 
