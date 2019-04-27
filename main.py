@@ -72,7 +72,8 @@ class Game_Object(pygame.sprite.Sprite):
     def is_in_screen(self):
         """return True if the object is in sight"""
 
-        if abs(CAMERA_X - self._position[0]) < (SCREEN_SIZE[0] / 2) and abs(CAMERA_Y - self._position[1]) < (SCREEN_SIZE[1] / 2):
+        if abs((CAMERA_X - self._position[0]) < (SCREEN_SIZE[0] / 2) and
+           abs(CAMERA_Y - self._position[1]) < (SCREEN_SIZE[1] / 2)):
            return True
         return False
 
@@ -113,7 +114,8 @@ class Game_Object(pygame.sprite.Sprite):
     def image_handler(self):
         """Redefine rotated image and center"""
 
-        box        = [pygame.math.Vector2(p) for p in [(0, 0), (self._size[0], 0), (self._size[0], -self._size[1]), (0, -self._size[1])]]
+        box        = [pygame.math.Vector2(p) for p in [(0, 0), (self._size[0], 0),
+                      (self._size[0], -self._size[1]), (0, -self._size[1])]]
         box_rotate = [p.rotate(self._angle) for p in box]
         self.min_box    = (min(box_rotate, key=lambda p: p[0])[0], min(box_rotate, key=lambda p: p[1])[1])
         self.max_box    = (max(box_rotate, key=lambda p: p[0])[0], max(box_rotate, key=lambda p: p[1])[1])
@@ -232,7 +234,8 @@ class Ship(Game_Object):
                                  self._max_speed * -sin90]
 
         if pressedKeys[pygame.K_UP]:
-            shine = Shine([self.rect.centerx, self.rect.centery], self._angle, dimension=[2, 2], color=(255, 255, 255))
+            shine = Shine([self.rect.centerx, self.rect.centery],
+                           self._angle, dimension=[2, 2], color=(255, 255, 255))
             GAME.environment.add(shine)
             GAME.all.add(shine)
 
