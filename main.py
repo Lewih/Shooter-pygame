@@ -15,18 +15,18 @@ DEBUG = False
 
 
 class Game_Object(pygame.sprite.Sprite):
-    """Generic game object. 
+    """Generic game object.
     Implements sprites rotation and movement.
     """
 
     def __init__(self, position, image, need_max_rect=False, camera_mode="normal"):
         super().__init__()
-        self._image       = image
-        self._size        = self._image.get_size()
-        self._life        = "immortal"
-        self._speed       = [0, 0] # [x, y]
-        self._angle       = 0
-        self._spin        = 0
+        self._image = image
+        self._size = self._image.get_size()
+        self._life = "immortal"
+        self._speed = [0, 0] # [x, y]
+        self._angle = 0
+        self._spin = 0
         self.image_handler() # initialize image attributes
         if need_max_rect:
             self.max_rect = self.get_max_rect()
@@ -36,7 +36,7 @@ class Game_Object(pygame.sprite.Sprite):
             self.rect.center = position
         else:
             self.rect = self._image.get_rect(center=position)
-        self._position    = [position[0], position[1]]
+        self._position = [position[0], position[1]]
         self._camera_mode = camera_mode
         self._need_update = True
 
@@ -73,8 +73,8 @@ class Game_Object(pygame.sprite.Sprite):
         """return True if the object is in sight"""
 
         if abs((CAMERA_X - self._position[0]) < (SCREEN_SIZE[0] / 2) and
-           abs(CAMERA_Y - self._position[1]) < (SCREEN_SIZE[1] / 2)):
-           return True
+               abs(CAMERA_Y - self._position[1]) < (SCREEN_SIZE[1] / 2)):
+            return True
         return False
 
     def distance_from(self, obj):
@@ -104,7 +104,7 @@ class Game_Object(pygame.sprite.Sprite):
 
         for string in values:
             offset += 15
-            display_label = DB_FONT.render(string ,1, (255, 255, 0))
+            display_label = DB_FONT.render(string, 1, (255, 255, 0))
             GAME.screen.blit(display_label, (self._display_label_position[0], 
                                              self._display_label_position[1] + offset))
 
@@ -114,16 +114,18 @@ class Game_Object(pygame.sprite.Sprite):
     def image_handler(self):
         """Redefine rotated image and center"""
 
-        box        = [pygame.math.Vector2(p) for p in [(0, 0), (self._size[0], 0),
-                      (self._size[0], -self._size[1]), (0, -self._size[1])]]
+        box = [pygame.math.Vector2(p) for p in [(0, 0), (self._size[0], 0),
+               (self._size[0], -self._size[1]), (0, -self._size[1])]]
         box_rotate = [p.rotate(self._angle) for p in box]
-        self.min_box    = (min(box_rotate, key=lambda p: p[0])[0], min(box_rotate, key=lambda p: p[1])[1])
-        self.max_box    = (max(box_rotate, key=lambda p: p[0])[0], max(box_rotate, key=lambda p: p[1])[1])
+        self.min_box = (min(box_rotate, key=lambda p: p[0])[0],
+                        min(box_rotate, key=lambda p: p[1])[1])
+        self.max_box = (max(box_rotate, key=lambda p: p[0])[0],
+                        max(box_rotate, key=lambda p: p[1])[1])
 
         # calculate the translation of the pivot 
-        pivot        = pygame.math.Vector2(self._size[0] / 2 , -self._size[1] / 2)
+        pivot = pygame.math.Vector2(self._size[0] / 2 , -self._size[1] / 2)
         pivot_rotate = pivot.rotate(self._angle)
-        self.pivot_move   = pivot_rotate - pivot
+        self.pivot_move = pivot_rotate - pivot
 
         self.rotated_image = pygame.transform.rotate(self._image, self._angle)
 
@@ -187,14 +189,14 @@ class Ship(Game_Object):
                  fire_rate, camera_mode='normal', controlled=False):
         super().__init__(start_pos, pygame.image.load(image).convert_alpha(),
                          need_max_rect=True, camera_mode=camera_mode)
-        self._image_dir    = image
-        self._life         = 100.0
+        self._image_dir = image
+        self._life = 100.0
         self._acceleration = acceleration
-        self._spin         = spin
-        self._max_speed  = max_speed
-        self._h_acceleration  = h_acceleration
+        self._spin = spin
+        self._max_speed = max_speed
+        self._h_acceleration = h_acceleration
         self._bullet_speed = bullet_speed
-        self._fire_rate    = fire_rate
+        self._fire_rate = fire_rate
         self._bullet_timer = 0
         self._controlled = controlled
 
@@ -214,7 +216,7 @@ class Ship(Game_Object):
         _bullet_timer: %f,
         _image: %s,
         _camera_mode: %s,
-        _controlled: %d}""" % (self._life, self.rect, self._position,self._speed[0], self._speed[1],
+        _controlled: %d}""" % (self._life, self.rect, self._position, self._speed[0], self._speed[1],
                                self._angle, self._acceleration, self._max_speed, self._h_acceleration,
                                self._spin, self._bullet_speed, self._fire_rate, self._bullet_timer,
                                self._image_dir, self._camera_mode, self._controlled))
@@ -228,14 +230,14 @@ class Ship(Game_Object):
         sin90 = math.sin(math.radians(self._angle + 90))
 
         self._rel_max_speed = [self._max_speed * cos, 
-                                 self._max_speed * -sin]
+                               self._max_speed * -sin]
 
         self._rel_max_h_speed = [self._max_speed * cos90, 
                                  self._max_speed * -sin90]
 
         if pressedKeys[pygame.K_UP]:
             shine = Shine([self.rect.centerx, self.rect.centery],
-                           self._angle, dimension=[2, 2], color=(255, 255, 255))
+                          self._angle, dimension=[2, 2], color=(255, 255, 255))
             GAME.environment.add(shine)
             GAME.all.add(shine)
 
@@ -359,7 +361,7 @@ class Bullet(Game_Object):
             self.kill()
             for x in range(20):
                 shine = Shine([self.rect.centerx, self.rect.centery],
-                               self._angle, spin=random.uniform(-2, 2))
+                              self._angle, spin=random.uniform(-2, 2))
                 GAME.environment.add(shine)
                 GAME.all.add(shine)
             caught.hit(self._damage)
@@ -383,7 +385,7 @@ class Surface(Game_Object):
                  camera_mode="normal", spin=0, speed=[0, 0],
                  life="immortal"):
         super().__init__(position, pygame.Surface(dimension, pygame.SRCALPHA).convert_alpha(),
-                         need_max_rect=need_max_rect ,camera_mode=camera_mode)
+                         need_max_rect=need_max_rect, camera_mode=camera_mode)
         self._color = color
         self._image.fill(color)
         self._spin = spin
@@ -491,7 +493,7 @@ class Test_game:
         # test objects
         for x in range(100):
             test = Surface([random.randint(1, map_size[0]),
-                           random.randint(1, map_size[1])],
+                            random.randint(1, map_size[1])],
                            [60, 60], (0, 0, 255), True, spin=1,
                            speed=[0, 0], life=5)
             self.rectangles.add(test)
@@ -502,10 +504,10 @@ class Test_game:
         # Starry sky
         if not DEBUG:
             for x in range(1000):
-                    star = Stars((random.randint(0, self.map_size[0]),
-                                random.randint(0, self.map_size[1])))
-                    self.starry_sky.add(star)
-                    self.all.add(star)
+                star = Stars((random.randint(0, self.map_size[0]),
+                              random.randint(0, self.map_size[1])))
+                self.starry_sky.add(star)
+                self.all.add(star)
 
     def main(self):
         global DELTA_TIME
@@ -527,9 +529,9 @@ class Test_game:
             self.ships.update(pygame.key.get_pressed())
             self.environment.update()
             display_label = DB_FONT.render(" Sprites in game:" +
-                                            str(self.all.sprites) +
-                                            ", fps: " + str(self.clock.get_fps()),
-                                            1, (255, 255, 0))
+                                           str(self.all.sprites) +
+                                           ", fps: " + str(self.clock.get_fps()),
+                                           1, (255, 255, 0))
             GAME.screen.blit(display_label, (0, 0))
             pygame.display.update()
 
