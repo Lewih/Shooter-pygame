@@ -80,7 +80,7 @@ class Game_Object(pygame.sprite.Sprite):
         pass #TODO
 
     def get_max_rect(self):
-        """get rect that contains the image at all angolation"""
+        """get rect that contains the image at every angolation"""
 
         max_value = 0
         for angle in range(360):
@@ -111,7 +111,7 @@ class Game_Object(pygame.sprite.Sprite):
         pass #TODO
 
     def image_handler(self):
-        """Redefine image rotation and center"""
+        """Redefine rotated image and center"""
 
         box        = [pygame.math.Vector2(p) for p in [(0, 0), (self._size[0], 0), (self._size[0], -self._size[1]), (0, -self._size[1])]]
         box_rotate = [p.rotate(self._angle) for p in box]
@@ -489,7 +489,7 @@ class Test_game:
         for x in range(100):
             test = Surface([random.randint(1, map_size[0]),
                            random.randint(1, map_size[1])],
-                           [20, 20], (0, 0, 255), True, spin=1,
+                           [60, 60], (0, 0, 255), True, spin=1,
                            speed=[0, 0], life=5)
             self.rectangles.add(test)
             self.environment.add(test)
