@@ -355,7 +355,8 @@ class Bullet(Game_Object):
         for caught in pygame.sprite.spritecollide(self, GAME.targets, False):
             self.kill()
             for x in range(20):
-                shine = Shine([self.rect.centerx, self.rect.centery], self._angle, spin=random.uniform(-2, 2))
+                shine = Shine([self.rect.centerx, self.rect.centery],
+                               self._angle, spin=random.uniform(-2, 2))
                 GAME.environment.add(shine)
                 GAME.all.add(shine)
             caught.hit(self._damage)
@@ -463,7 +464,8 @@ class Test_game:
         self.all = pygame.sprite.Group()
 
         # User
-        self.user = Ship([100, 200], 'Images/ship.png', 0.7, 0.4, 10, 10.0, 10.0, 7, camera_mode='scrolling', controlled=True)
+        self.user = Ship([100, 200], 'Images/ship.png', 0.7, 0.4, 10, 10.0, 10.0, 7,
+                         camera_mode='scrolling', controlled=True)
         CAMERA_X = 100
         CAMERA_Y = 200
         self.ships.add(self.user)
@@ -485,7 +487,10 @@ class Test_game:
 
         # test objects
         for x in range(100):
-            test = Surface([random.randint(1, map_size[0]), random.randint(1, map_size[1])], [20, 20], (0, 0, 255), True, spin=1, speed=[0, 0], life=5)
+            test = Surface([random.randint(1, map_size[0]),
+                           random.randint(1, map_size[1])],
+                           [20, 20], (0, 0, 255), True, spin=1,
+                           speed=[0, 0], life=5)
             self.rectangles.add(test)
             self.environment.add(test)
             self.targets.add(test)
@@ -518,7 +523,10 @@ class Test_game:
             self.bullets.update()
             self.ships.update(pygame.key.get_pressed())
             self.environment.update()
-            display_label = DB_FONT.render(" Sprites in game:" + str(self.all.sprites) + ", fps: " + str(self.clock.get_fps()), 1, (255, 255, 0))
+            display_label = DB_FONT.render(" Sprites in game:" +
+                                            str(self.all.sprites) +
+                                            ", fps: " + str(self.clock.get_fps()),
+                                            1, (255, 255, 0))
             GAME.screen.blit(display_label, (0, 0))
             pygame.display.update()
 
