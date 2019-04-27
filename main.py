@@ -1,7 +1,6 @@
 import math
 import random
 import threading
-import socket
 import pygame
 
 # Initialize pygame
@@ -15,70 +14,34 @@ DB_FONT = pygame.font.SysFont("monospace", 15)
 DEBUG = False
 
 
-class Server(threading.Thread):
-    PORT = 50000
-
-    def __init__(self):
-        super().__init__()
-        self.text = ''
-        self.client = None
-        self.address = None
-
-        self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.server.bind(('localhost', self.PORT))
-        self.server.listen(1)
-
-    def send(self, message):
-        try:
-            self.server.sendall(bytes(str(message), 'ascii'))
-        except Exception as err:
-            print(err)
-            exit(1)
-
-    def reading(self):
-        if self.text == 'exit':
-            self.send('shutdown()')
-            self.server.shutdown(socket.SHUT_RDWR)
-            self.server.close()
-
-        else:
-            self.send(GAME.user.str)
-
-    def run(self):
-        print('\nwaiting for new connection...')
-        self.client, self.address = self.server.accept()
-        print('\nConnected to ', self.address + '\n')
-        self.client.send(bytes("Connected!\n", 'ascii'))
-        while True:
-            try:
-                self.text = str(self.client.recv(4096), 'ascii')
-                self.reading()
-            except Exception as err:
-                self.send(err)
-
-
-class Client(threading.Thread):
-    pass
-
-
 class Game_Object(pygame.sprite.Sprite):
     """Generic game object. 
     Implements sprites rotation and movement.
-    _image and _size must be defined in child class.
     """
 
-    def __init__(self, position, camera_mode="normal"):
+    def __init__(self, position, image, need_max_rect=False, camera_mode="normal"):
         super().__init__()
+        self._image       = image
+        self._size        = self._image.get_size()
         self._life        = "immortal"
         self._speed       = [0, 0] # [x, y]
         self._angle       = 0
         self._spin        = 0
-        self.rect         = self._image.get_rect(center=position)
+        self.image_handler() # initialize image attributes
+        if need_max_rect:
+            self.max_rect = self.get_max_rect()
+            self.rect = pygame.Rect((0, 0),
+                                    (self.max_rect,
+                                     self.max_rect))
+            self.rect.center = position
+        else:
+            self.rect = self._image.get_rect(center=position)
         self._position    = [position[0], position[1]]
         self._camera_mode = camera_mode
         self._need_update = True
 
     def __str__(self):
+
         return """
         game_object = {
         _life: %s,
@@ -93,7 +56,7 @@ class Game_Object(pygame.sprite.Sprite):
                            self._spin, self._angle, self._camera_mode)
 
     def hit(self, damage):
-        """hit method"""
+        """hit the object, life drops according to damage"""
 
         if self._life != "immortal":
             self._life -= damage
@@ -101,11 +64,36 @@ class Game_Object(pygame.sprite.Sprite):
                 self.kill()
 
     def spin(self, value):
-        """spin method"""
+        """spin the object"""
 
         if value != 0:
             self._angle += value
             self._need_update = True
+
+    def is_in_screen(self):
+        """return True if the object is in sight"""
+
+        if abs(CAMERA_X - self._position[0]) < (SCREEN_SIZE[0] / 2) and abs(CAMERA_Y - self._position[1]) < (SCREEN_SIZE[1] / 2):
+           return True
+        return False
+
+    def distance_from(self, obj):
+        pass
+
+    def get_max_rect(self):
+        """get rect that contains the image at all angolation"""
+
+        max_value = 0
+        for angle in range(360):
+            self._angle = angle
+            self.image_handler()
+            rect = self.rotated_image.get_rect()
+            if rect.width > max_value:
+                max_value = rect.width
+            if rect.height > max_value:
+                max_value = rect.height
+        self._angle = 0
+        return max_value
 
     def display_label(self):
         """Display object __str__ as a label in game"""
@@ -120,29 +108,30 @@ class Game_Object(pygame.sprite.Sprite):
             GAME.screen.blit(display_label, (self._display_label_position[0], 
                                                   self._display_label_position[1] + offset))
 
+    def display_rect(self):
+        pass
+
     def image_handler(self):
         """Redefine image rotation and center"""
 
-        w, h       = self._image.get_size()
-        box        = [pygame.math.Vector2(p) for p in [(0, 0), (w, 0), (w, -h), (0, -h)]]
+        box        = [pygame.math.Vector2(p) for p in [(0, 0), (self._size[0], 0), (self._size[0], -self._size[1]), (0, -self._size[1])]]
         box_rotate = [p.rotate(self._angle) for p in box]
         self.min_box    = (min(box_rotate, key=lambda p: p[0])[0], min(box_rotate, key=lambda p: p[1])[1])
         self.max_box    = (max(box_rotate, key=lambda p: p[0])[0], max(box_rotate, key=lambda p: p[1])[1])
 
         # calculate the translation of the pivot 
-        pivot        = pygame.math.Vector2(self._size[0] / 2 , - self._size[1] / 2)
+        pivot        = pygame.math.Vector2(self._size[0] / 2 , -self._size[1] / 2)
         pivot_rotate = pivot.rotate(self._angle)
         self.pivot_move   = pivot_rotate - pivot
 
         self.rotated_image = pygame.transform.rotate(self._image, self._angle)
-        self.rect = self.rotated_image.get_rect()
 
     def update(self):
         """Overridden update method.
         Updates sprite position and image"""
 
         # redefine position and rotate sprite image 
-        if self._need_update:
+        if self._need_update and self.is_in_screen():
             self.image_handler()
             self._need_update = False
 
@@ -151,11 +140,6 @@ class Game_Object(pygame.sprite.Sprite):
 
         self.rect.centerx = int(self._position[0])
         self.rect.centery = int(self._position[1])
-
-         # calculate the upper left origin of the rotated image
-        self._origin = (self.rect.centerx - self._size[0] / 2 + self.min_box[0] - self.pivot_move[0],
-                        self.rect.centery - self._size[1] / 2 - self.max_box[1] + self.pivot_move[1])
-
 
         if self._camera_mode == 'scrolling':
             global CAMERA_X, CAMERA_Y
@@ -168,13 +152,17 @@ class Game_Object(pygame.sprite.Sprite):
             self._display_label_position = (x + 45, y)
             GAME.screen.blit(self.rotated_image, (x, y))
 
-        elif self._camera_mode == "normal":
+        elif self._camera_mode == "normal" and self.is_in_screen():
+             # calculate the upper left origin of the rotated image
+            self._origin = (self._position[0] - self._size[0] / 2 + self.min_box[0] - self.pivot_move[0],
+                            self._position[1] - self._size[1] / 2 - self.max_box[1] + self.pivot_move[1])
             self._display_label_position = ((SCREEN_SIZE[0] / 2) - ((CAMERA_X - self._origin[0])),
                                             (SCREEN_SIZE[1] / 2) - ((CAMERA_Y - self._origin[1])) - 30)
             GAME.screen.blit(self.rotated_image, ((SCREEN_SIZE[0] / 2) - ((CAMERA_X - self._origin[0])),
-                                                       (SCREEN_SIZE[1] / 2) - ((CAMERA_Y - self._origin[1]))))
+                                                  (SCREEN_SIZE[1] / 2) - ((CAMERA_Y - self._origin[1]))))
         if DEBUG:
             self.display_label()
+            self.display_rect()
 
 
 class Ship(Game_Object):
@@ -196,11 +184,10 @@ class Ship(Game_Object):
     def __init__(self, start_pos, image, acceleration,
                  h_acceleration, spin, max_speed, bullet_speed,
                  fire_rate, camera_mode='normal', controlled=False):
+        super().__init__(start_pos, pygame.image.load(image).convert_alpha(),
+                         need_max_rect=True, camera_mode=camera_mode)
         self._image_dir    = image
-        self._image        = pygame.image.load(image).convert_alpha()
-        super().__init__(start_pos, camera_mode=camera_mode)
         self._life         = 100.0
-        self._size         = self._image.get_size()
         self._acceleration = acceleration
         self._spin         = spin
         self._max_speed  = max_speed
@@ -351,12 +338,10 @@ class Bullet(Game_Object):
 
     def __init__(self, start_pos, angle, bullet_speed,
                  image='Images/bullet.png'):
-        self._image = pygame.image.load(image).convert_alpha()
-        super().__init__(start_pos)
+        super().__init__(start_pos, pygame.image.load(image).convert_alpha())
         self._angle = angle
         self._spin = 0
         self._bullet_speed = bullet_speed
-        self._size  = self._image.get_size()
         self._speed = [self._bullet_speed * math.cos(math.radians(self._angle)), 
                        self._bullet_speed * -math.sin(math.radians(self._angle))]
         self._damage = 1
@@ -381,14 +366,13 @@ class Surface(Game_Object):
             spin{float} -- default is 0
             speed{array: float} -- default is [0, 0]"""
 
-    def __init__(self, position, dimension, color,
+    def __init__(self, position, dimension, color, need_max_rect,
                  camera_mode="normal", spin=0, speed=[0, 0],
                  life="immortal"):
-        self._image = pygame.Surface(dimension, pygame.SRCALPHA)
-        super().__init__(position, camera_mode=camera_mode)
+        super().__init__(position, pygame.Surface(dimension, pygame.SRCALPHA).convert_alpha(),
+                         need_max_rect=need_max_rect ,camera_mode=camera_mode)
         self._color = color
         self._image.fill(color)
-        self._size = self._image.get_size()
         self._spin = spin
         self._speed = speed
         self._life = life
@@ -398,17 +382,20 @@ class Surface(Game_Object):
         Game_Object.update(self)
 
 
+class Debris(Game_Object):
+    pass
+
+
 class Edge(Surface):
     def __init__(self, position, dimension, color):
-        super().__init__(position, dimension, color)
+        super().__init__(position, dimension, color, False)
         self.rect = self._image.get_rect(topleft=position)
         self._need_update = False
-        self.rotated_image = self._image
 
     def update(self):
         self._display_label_position = ((SCREEN_SIZE[0] / 2) - ((CAMERA_X - self.rect.x)),
                                         (SCREEN_SIZE[1] / 2) - ((CAMERA_Y - self.rect.y)) - 30)
-        GAME.screen.blit(self.rotated_image, ((SCREEN_SIZE[0] / 2) - ((CAMERA_X - self.rect.x)),
+        GAME.screen.blit(self._image, ((SCREEN_SIZE[0] / 2) - ((CAMERA_X - self.rect.x)),
                                               (SCREEN_SIZE[1] / 2) - ((CAMERA_Y - self.rect.y))))
 
 
@@ -416,7 +403,7 @@ class Shine(Surface):
     """light and shines"""
 
     def __init__(self, position, angle, color=(155, 155, 0)):
-        super().__init__(position, [5, 2], color)
+        super().__init__(position, [5, 2], color, False)
         self._angle = random.randint(0, 360)
         self._speed = [(- math.cos(math.radians(angle))) * random.randint(0, 7),
                        (math.sin(math.radians(angle))) * random.randint(0, 7)] 
@@ -434,13 +421,10 @@ class Stars(Surface):
     """background stars"""
 
     def __init__(self, position, color=(255, 255, 255)):
-        super().__init__(position, [1, 1], color)
-
-
-class Debris(Game_Object):
-    """Polygon shape object"""
-
-    pass
+        super().__init__(position, [1, 1], color, False)
+    
+    def update(self):
+        Game_Object.update(self)
 
 
 class Test_game:
@@ -487,14 +471,11 @@ class Test_game:
             self.targets.add(item)
 
         # test objects
-        for x in range(30):
-            test = Surface([random.randint(1, map_size[0]), random.randint(1, map_size[1])], [100, 100], (0, 0, 255), spin=1, speed=[0, 0], life=5)
+        for x in range(100):
+            test = Surface([random.randint(1, map_size[0]), random.randint(1, map_size[1])], [10, 10], (0, 0, 255), True, spin=1, speed=[0, 0], life=5)
             self.rectangles.add(test)
             self.environment.add(test)
             self.targets.add(test)
-        #self.centre = Surface([0, 0], [4,4], (255, 255, 255), spin = 0, camera_mode="scrolling")
-        #test = Surface([0, 0], [100, 100], (0, 0, 255), spin=1, speed=[0, 0], life=5)
-        #self.environment.add(test)
 
         # Starry sky
         if not DEBUG:
@@ -521,11 +502,9 @@ class Test_game:
             self.bullets.update()
             self.ships.update(pygame.key.get_pressed())
             self.environment.update()
-            #self.centre.update()
             display_label = DB_FONT.render("fps: " + str(self.clock.get_fps()), 1, (255, 255, 0))
             GAME.screen.blit(display_label, (0, 0))
             pygame.display.update()
-            #print(self.clock.get_fps(), len(self.bullets.sprites()), DELTA_TIME)
 
         pygame.quit()
 
