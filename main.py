@@ -233,6 +233,9 @@ class Ship(Game_Object):
                                  self._max_speed * -sin90]
 
         if pressedKeys[pygame.K_UP]:
+            shine = Shine([self.rect.centerx, self.rect.centery], self._angle, dimension=[2, 2], color=(255, 255, 255))
+            GAME.environment.add(shine)
+
             if self._rel_max_speed[0] > 0:
                 if self._speed[0] <= self._rel_max_speed[0]:
                     self._speed[0] += self._acceleration * cos / DELTA_TIME
@@ -402,19 +405,19 @@ class Edge(Surface):
 class Shine(Surface):
     """light and shines"""
 
-    def __init__(self, position, angle, color=(155, 155, 0)):
-        super().__init__(position, [5, 2], color, False)
+    def __init__(self, position, angle, dimension=[5, 2], color=(155, 155, 0)):
+        super().__init__(position, dimension, color, False)
         self._angle = random.randint(0, 360)
         self._speed = [(- math.cos(math.radians(angle))) * random.randint(0, 7),
                        (math.sin(math.radians(angle))) * random.randint(0, 7)] 
         self._time2live = random.randint(5, 100)
-        self._spin = random.randint(-2, -2)
+        self._spin = 0
     
     def update(self):
         self._time2live -= 1 / DELTA_TIME
         if self._time2live < 0:
             self.kill()
-        Surface.update(self)
+        Game_Object.update(self)
 
 
 class Stars(Surface):
