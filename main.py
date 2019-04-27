@@ -106,7 +106,7 @@ class Game_Object(pygame.sprite.Sprite):
             offset += 15
             display_label = DB_FONT.render(string ,1, (255, 255, 0))
             GAME.screen.blit(display_label, (self._display_label_position[0], 
-                                                  self._display_label_position[1] + offset))
+                                             self._display_label_position[1] + offset))
 
     def display_rect(self):
         pass #TODO
