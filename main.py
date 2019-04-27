@@ -78,7 +78,7 @@ class Game_Object(pygame.sprite.Sprite):
         return False
 
     def distance_from(self, obj):
-        pass
+        pass #TODO
 
     def get_max_rect(self):
         """get rect that contains the image at all angolation"""
@@ -109,7 +109,7 @@ class Game_Object(pygame.sprite.Sprite):
                                                   self._display_label_position[1] + offset))
 
     def display_rect(self):
-        pass
+        pass #TODO
 
     def image_handler(self):
         """Redefine image rotation and center"""
@@ -235,6 +235,7 @@ class Ship(Game_Object):
         if pressedKeys[pygame.K_UP]:
             shine = Shine([self.rect.centerx, self.rect.centery], self._angle, dimension=[2, 2], color=(255, 255, 255))
             GAME.environment.add(shine)
+            GAME.all.add(shine)
 
             if self._rel_max_speed[0] > 0:
                 if self._speed[0] <= self._rel_max_speed[0]:
@@ -321,6 +322,7 @@ class Ship(Game_Object):
             for x in range(20):
                 shine = Shine([self.rect.centerx, self.rect.centery], self._angle)
                 GAME.environment.add(shine)
+                GAME.all.add(shine)
 
         if self._bullet_timer > 0:
             self._bullet_timer -= 1 / DELTA_TIME
@@ -353,8 +355,9 @@ class Bullet(Game_Object):
         for caught in pygame.sprite.spritecollide(self, GAME.targets, False):
             self.kill()
             for x in range(20):
-                shine = Shine([self.rect.centerx, self.rect.centery], self._angle)
+                shine = Shine([self.rect.centerx, self.rect.centery], self._angle, spin=random.uniform(-2, 2))
                 GAME.environment.add(shine)
+                GAME.all.add(shine)
             caught.hit(self._damage)
         Game_Object.update(self)
 
@@ -386,10 +389,12 @@ class Surface(Game_Object):
 
 
 class Debris(Game_Object):
-    pass
+    pass #TODO
 
 
 class Edge(Surface):
+    """Map Edge surface"""
+
     def __init__(self, position, dimension, color):
         super().__init__(position, dimension, color, False)
         self.rect = self._image.get_rect(topleft=position)
@@ -403,21 +408,21 @@ class Edge(Surface):
 
 
 class Shine(Surface):
-    """light and shines"""
+    """lights and shines"""
 
-    def __init__(self, position, angle, dimension=[5, 2], color=(155, 155, 0)):
+    def __init__(self, position, angle, spin=0, dimension=[5, 2], color=(155, 155, 0)):
         super().__init__(position, dimension, color, False)
         self._angle = random.randint(0, 360)
-        self._speed = [(- math.cos(math.radians(angle))) * random.randint(0, 7),
-                       (math.sin(math.radians(angle))) * random.randint(0, 7)] 
+        self._speed = [(- math.cos(math.radians(angle))) * random.randint(0, 7) + random.uniform(-1, 1),
+                       (math.sin(math.radians(angle))) * random.randint(0, 7) + random.uniform(-1, 1)] 
         self._time2live = random.randint(5, 100)
-        self._spin = 0
+        self._spin = spin
     
     def update(self):
         self._time2live -= 1 / DELTA_TIME
         if self._time2live < 0:
             self.kill()
-        Game_Object.update(self)
+        Game_Object.update(self) # no spin for shines, performance issue TODO
 
 
 class Stars(Surface):
@@ -472,13 +477,15 @@ class Test_game:
             self.edge.add(item)
             self.environment.add(item)
             self.targets.add(item)
+            self.all.add(item)
 
         # test objects
         for x in range(100):
-            test = Surface([random.randint(1, map_size[0]), random.randint(1, map_size[1])], [10, 10], (0, 0, 255), True, spin=1, speed=[0, 0], life=5)
+            test = Surface([random.randint(1, map_size[0]), random.randint(1, map_size[1])], [20, 20], (0, 0, 255), True, spin=1, speed=[0, 0], life=5)
             self.rectangles.add(test)
             self.environment.add(test)
             self.targets.add(test)
+            self.all.add(test)
 
         # Starry sky
         if not DEBUG:
@@ -486,6 +493,7 @@ class Test_game:
                     star = Stars((random.randint(0, self.map_size[0]),
                                 random.randint(0, self.map_size[1])))
                     self.starry_sky.add(star)
+                    self.all.add(star)
 
     def main(self):
         global DELTA_TIME
@@ -505,7 +513,7 @@ class Test_game:
             self.bullets.update()
             self.ships.update(pygame.key.get_pressed())
             self.environment.update()
-            display_label = DB_FONT.render("fps: " + str(self.clock.get_fps()), 1, (255, 255, 0))
+            display_label = DB_FONT.render(" Sprites in game:" + str(self.all.sprites) + ", fps: " + str(self.clock.get_fps()), 1, (255, 255, 0))
             GAME.screen.blit(display_label, (0, 0))
             pygame.display.update()
 
