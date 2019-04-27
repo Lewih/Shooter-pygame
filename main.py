@@ -1,6 +1,5 @@
 import math
 import random
-import threading
 import pygame
 
 # Initialize pygame
