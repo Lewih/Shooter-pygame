@@ -7,10 +7,12 @@ pygame.init()
 
 # Constants
 SCREEN_SIZE = (1300, 800)
-CAMERA_X = 0
-CAMERA_Y = 0
 DB_FONT = pygame.font.SysFont("monospace", 15)
 DEBUG = False
+
+# Global
+cameraX = 0
+cameraY = 0
 
 
 class Game_Object(pygame.sprite.Sprite):
@@ -71,8 +73,8 @@ class Game_Object(pygame.sprite.Sprite):
     def is_in_screen(self):
         """return True if the object is in sight"""
 
-        if abs((CAMERA_X - self._position[0]) < (SCREEN_SIZE[0] / 2) and
-               abs(CAMERA_Y - self._position[1]) < (SCREEN_SIZE[1] / 2)):
+        if abs((cameraX - self._position[0]) < (SCREEN_SIZE[0] / 2) and
+                abs(cameraY - self._position[1]) < (SCREEN_SIZE[1] / 2)):
             return True
         return False
 
@@ -137,15 +139,15 @@ class Game_Object(pygame.sprite.Sprite):
             self.image_handler()
             self._need_update = False
 
-        self._position[0] += self._speed[0] / DELTA_TIME
-        self._position[1] += self._speed[1] / DELTA_TIME
+        self._position[0] += self._speed[0] / deltaTime
+        self._position[1] += self._speed[1] / deltaTime
         self.rect.centerx = int(self._position[0])
         self.rect.centery = int(self._position[1])
 
         if self._camera_mode == 'scrolling':
-            global CAMERA_X, CAMERA_Y
-            CAMERA_X = int(self._position[0])
-            CAMERA_Y = int(self._position[1])
+            global cameraX, cameraY
+            cameraX = int(self._position[0])
+            cameraY = int(self._position[1])
             w, h = self.rotated_image.get_size()
             x = (SCREEN_SIZE[0] / 2.0) - w / 2
             y = (SCREEN_SIZE[1] / 2.0) - h / 2
@@ -157,11 +159,11 @@ class Game_Object(pygame.sprite.Sprite):
              # calculate the upper left origin of the rotated image
             self._origin = (self._position[0] - self._size[0] / 2 + self.min_box[0] - self.pivot_move[0],
                             self._position[1] - self._size[1] / 2 - self.max_box[1] + self.pivot_move[1])
-            self.label_position = ((SCREEN_SIZE[0] / 2) - ((CAMERA_X - self._origin[0])),
-                                   (SCREEN_SIZE[1] / 2) - ((CAMERA_Y - self._origin[1])) - 30)
+            self.label_position = ((SCREEN_SIZE[0] / 2) - ((cameraX - self._origin[0])),
+                                   (SCREEN_SIZE[1] / 2) - ((cameraY - self._origin[1])) - 30)
 
-            GAME.screen.blit(self.rotated_image, ((SCREEN_SIZE[0] / 2) - ((CAMERA_X - self._origin[0])),
-                                                  (SCREEN_SIZE[1] / 2) - ((CAMERA_Y - self._origin[1]))))
+            GAME.screen.blit(self.rotated_image, ((SCREEN_SIZE[0] / 2) - ((cameraX - self._origin[0])),
+                                                  (SCREEN_SIZE[1] / 2) - ((cameraY - self._origin[1]))))
         if DEBUG:
             self.display_label()
             self.display_rect()
@@ -178,7 +180,7 @@ class Ship(Game_Object):
         spin {float} -- Ship spin
         max_speed {float} -- nominal max vertical speed
         bullet_speed {float} -- Ship bullet speed
-        fire_rate {float} -- fire sleep in game tick / DELTA_TIME
+        fire_rate {float} -- fire sleep in game tick / deltaTime
         camera_mode{string} -- normal = not player object
                                scrolling = locked camera on player ship
         controlled{bool}  -- ship is controlled by user"""
@@ -242,68 +244,68 @@ class Ship(Game_Object):
 
             if self.rel_max_speed[0] > 0:
                 if self._speed[0] <= self.rel_max_speed[0]:
-                    self._speed[0] += self._acceleration * cos / DELTA_TIME
+                    self._speed[0] += self._acceleration * cos / deltaTime
             else:
                 if self._speed[0] >= self.rel_max_speed[0]:
-                    self._speed[0] += self._acceleration * cos / DELTA_TIME
+                    self._speed[0] += self._acceleration * cos / deltaTime
 
             if self.rel_max_speed[1] > 0:
                 if self._speed[1] <= self.rel_max_speed[1]:
-                    self._speed[1] += self._acceleration * -sin / DELTA_TIME
+                    self._speed[1] += self._acceleration * -sin / deltaTime
             else:
                 if self._speed[1] >= self.rel_max_speed[1]:
-                    self._speed[1] += self._acceleration * -sin / DELTA_TIME
+                    self._speed[1] += self._acceleration * -sin / deltaTime
 
         elif pressedKeys[pygame.K_DOWN]:
             if self.rel_max_speed[0] > 0:
                 if self._speed[0] >= -self.rel_max_speed[0]:
-                    self._speed[0] -= self._acceleration * cos / DELTA_TIME
+                    self._speed[0] -= self._acceleration * cos / deltaTime
             else:
                 if self._speed[0] <= -self.rel_max_speed[0]:
-                    self._speed[0] -= self._acceleration * cos / DELTA_TIME
+                    self._speed[0] -= self._acceleration * cos / deltaTime
 
             if self.rel_max_speed[1] > 0:
                 if self._speed[1] >= -self.rel_max_speed[1]:
-                    self._speed[1] -= self._acceleration * -sin / DELTA_TIME
+                    self._speed[1] -= self._acceleration * -sin / deltaTime
             else:
                 if self._speed[1] <= -self.rel_max_speed[1]:
-                    self._speed[1] -= self._acceleration * -sin / DELTA_TIME
+                    self._speed[1] -= self._acceleration * -sin / deltaTime
 
         if pressedKeys[pygame.K_q]:
             if self.rel_max_h_speed[0] > 0:
                 if self._speed[0] <= self.rel_max_h_speed[0]:
-                    self._speed[0] += self._h_acceleration * cos90 / DELTA_TIME
+                    self._speed[0] += self._h_acceleration * cos90 / deltaTime
             else:
                 if self._speed[0] >= self.rel_max_h_speed[0]:
-                    self._speed[0] += self._h_acceleration * cos90 / DELTA_TIME
+                    self._speed[0] += self._h_acceleration * cos90 / deltaTime
 
             if self.rel_max_h_speed[1] > 0:
                 if self._speed[1] <= self.rel_max_h_speed[1]:
-                    self._speed[1] += self._h_acceleration * -sin90 / DELTA_TIME
+                    self._speed[1] += self._h_acceleration * -sin90 / deltaTime
             else:
                 if self._speed[1] >= self.rel_max_h_speed[1]:
-                    self._speed[1] += self._h_acceleration * -sin90 / DELTA_TIME
+                    self._speed[1] += self._h_acceleration * -sin90 / deltaTime
 
         elif pressedKeys[pygame.K_e]:
             if self.rel_max_h_speed[0] > 0:
                 if self._speed[0] >= -self.rel_max_h_speed[0]:
-                    self._speed[0] -= self._h_acceleration * cos90 / DELTA_TIME
+                    self._speed[0] -= self._h_acceleration * cos90 / deltaTime
             else:
                 if self._speed[0] <= -self.rel_max_h_speed[0]:
-                    self._speed[0] -= self._h_acceleration * cos90 / DELTA_TIME
+                    self._speed[0] -= self._h_acceleration * cos90 / deltaTime
 
             if self.rel_max_h_speed[1] > 0:
                 if self._speed[1] >= -self.rel_max_h_speed[1]:
-                    self._speed[1] -= self._h_acceleration * -sin90 / DELTA_TIME
+                    self._speed[1] -= self._h_acceleration * -sin90 / deltaTime
             else:
                 if self._speed[1] <= -self.rel_max_h_speed[1]:
-                    self._speed[1] -= self._h_acceleration * -sin90 / DELTA_TIME
+                    self._speed[1] -= self._h_acceleration * -sin90 / deltaTime
 
         if pressedKeys[pygame.K_LEFT]:
-            self.spin(self._spin / DELTA_TIME)
+            self.spin(self._spin / deltaTime)
 
         if pressedKeys[pygame.K_RIGHT]:
-            self.spin(-self._spin / DELTA_TIME)
+            self.spin(-self._spin / deltaTime)
 
         if pressedKeys[pygame.K_w]:
             self._speed = [0, 0]
@@ -328,7 +330,7 @@ class Ship(Game_Object):
                 GAME.all.add(shine)
 
         if self._bullet_timer > 0:
-            self._bullet_timer -= 1 / DELTA_TIME
+            self._bullet_timer -= 1 / deltaTime
 
         if self._controlled:
             self.controls(pressedKeys)
@@ -392,7 +394,7 @@ class Surface(Game_Object):
         self._life = life
 
     def update(self):
-        self.spin(self._spin / DELTA_TIME)
+        self.spin(self._spin / deltaTime)
         Game_Object.update(self)
 
 
@@ -409,10 +411,10 @@ class Edge(Surface):
         self._need_update = False
 
     def update(self):
-        self.label_position = ((SCREEN_SIZE[0] / 2) - ((CAMERA_X - self.rect.x)),
-                               (SCREEN_SIZE[1] / 2) - ((CAMERA_Y - self.rect.y)) - 30)
-        GAME.screen.blit(self._image, ((SCREEN_SIZE[0] / 2) - ((CAMERA_X - self.rect.x)),
-                                       (SCREEN_SIZE[1] / 2) - ((CAMERA_Y - self.rect.y))))
+        self.label_position = ((SCREEN_SIZE[0] / 2) - ((cameraX - self.rect.x)),
+                               (SCREEN_SIZE[1] / 2) - ((cameraY - self.rect.y)) - 30)
+        GAME.screen.blit(self._image, ((SCREEN_SIZE[0] / 2) - ((cameraX - self.rect.x)),
+                                       (SCREEN_SIZE[1] / 2) - ((cameraY - self.rect.y))))
 
 
 class Shine(Surface):
@@ -427,7 +429,7 @@ class Shine(Surface):
         self._spin = spin
     
     def update(self):
-        self._time2live -= 1 / DELTA_TIME
+        self._time2live -= 1 / deltaTime
         if self._time2live < 0:
             self.kill()
         Game_Object.update(self) # no spin for shines due to performance issue TODO
@@ -447,7 +449,7 @@ class Test_game:
     """Test game with some sprites and basic settings"""
 
     def __init__(self, map_size):
-        global SCREEN_SIZE, CAMERA_X, CAMERA_Y
+        global SCREEN_SIZE, cameraX, cameraY
         self.map_size = map_size
 
         # Setting up the screen
@@ -470,8 +472,8 @@ class Test_game:
         # User
         self.user = Ship([100, 200], 'Images/ship.png', 0.7, 0.4, 10, 10.0, 10.0, 7,
                          camera_mode='scrolling', controlled=True)
-        CAMERA_X = 100
-        CAMERA_Y = 200
+        cameraX = 100
+        cameraY = 200
         self.ships.add(self.user)
 
         # Finalize screen
@@ -509,7 +511,7 @@ class Test_game:
                 self.all.add(star)
 
     def main(self):
-        global DELTA_TIME
+        global deltaTime
         done = False
 
         # check for exit
@@ -519,7 +521,7 @@ class Test_game:
                     done = True
 
             # delta time, game is frame rate indipendent
-            DELTA_TIME = 30 / self.clock.tick_busy_loop(60)
+            deltaTime = 30 / self.clock.tick_busy_loop(60)
 
             # Refresh screen and update sprites
             self.screen.fill((0, 0, 0))
