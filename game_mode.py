@@ -3,6 +3,7 @@ import pygame
 import game_object
 import player_object
 
+
 class Game:
 
     def __init__(self, map_size, screen_size, debug):
@@ -107,6 +108,6 @@ class Test_game(Game):
 if __name__ == "__main__":
     # Initialize pygame
     pygame.init()
-    
+
     GAME = Test_game((1500, 1500), (1300, 800), False)
     GAME.main()

@@ -3,6 +3,7 @@ import random
 import pygame
 import game_object
 
+
 class Ship(game_object.Game_Object):
     """Ship game object.
 
