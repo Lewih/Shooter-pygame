@@ -11,8 +11,7 @@ DB_FONT = pygame.font.SysFont("monospace", 15)
 DEBUG = False
 
 # Global
-cameraX = 0
-cameraY = 0
+# cameraX, cameraY
 
 
 class Game_Object(pygame.sprite.Sprite):
@@ -46,12 +45,12 @@ class Game_Object(pygame.sprite.Sprite):
         game_object = {
         _life: %s,
         _rect: %s,
-        _origin: %s,
+        origin: %s,
         _position: %s,
         _speed: [%f, %f],
         _spin: %f,
         _angle: %f,
-        _camera: %s}""" % (self._life, self.rect, self._origin, self._position,
+        _camera: %s}""" % (self._life, self.rect, self.origin, self._position,
                            self._speed[0], self._speed[1],
                            self._spin, self._angle, self._camera_mode)
 
@@ -84,17 +83,9 @@ class Game_Object(pygame.sprite.Sprite):
     def get_max_rect(self):
         """get rect that contains the image at every angolation"""
 
-        max_value = 0
-        for angle in range(360):
-            self._angle = angle
-            self.image_handler()
-            rect = self.rotated_image.get_rect()
-            if rect.width > max_value:
-                max_value = rect.width
-            if rect.height > max_value:
-                max_value = rect.height
-        self._angle = 0
-        return max_value
+        self.image_handler()
+        rect = self.rotated_image.get_rect()
+        return (rect.width**2 + rect.height**2)**0.5
 
     def display_label(self):
         """Display object __str__ as a label in game"""
@@ -157,13 +148,13 @@ class Game_Object(pygame.sprite.Sprite):
 
         elif self._camera_mode == "normal" and self.is_in_screen():
              # calculate the upper left origin of the rotated image
-            self._origin = (self._position[0] - self._size[0] / 2 + self.min_box[0] - self.pivot_move[0],
+            self.origin = (self._position[0] - self._size[0] / 2 + self.min_box[0] - self.pivot_move[0],
                             self._position[1] - self._size[1] / 2 - self.max_box[1] + self.pivot_move[1])
-            self.label_position = ((SCREEN_SIZE[0] / 2) - ((cameraX - self._origin[0])),
-                                   (SCREEN_SIZE[1] / 2) - ((cameraY - self._origin[1])) - 30)
+            self.label_position = ((SCREEN_SIZE[0] / 2) - ((cameraX - self.origin[0])),
+                                   (SCREEN_SIZE[1] / 2) - ((cameraY - self.origin[1])) - 30)
 
-            GAME.screen.blit(self.rotated_image, ((SCREEN_SIZE[0] / 2) - ((cameraX - self._origin[0])),
-                                                  (SCREEN_SIZE[1] / 2) - ((cameraY - self._origin[1]))))
+            GAME.screen.blit(self.rotated_image, ((SCREEN_SIZE[0] / 2) - ((cameraX - self.origin[0])),
+                                                  (SCREEN_SIZE[1] / 2) - ((cameraY - self.origin[1]))))
         if DEBUG:
             self.display_label()
             self.display_rect()
