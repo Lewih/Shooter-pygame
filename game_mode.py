@@ -5,7 +5,8 @@ import player_object
 
 
 class Game:
-
+    """Generic Game, initialize important attributes and contains mainloop
+    """
     def __init__(self, map_size, screen_size, debug):
         self.map_size = map_size
         self.screen_size = screen_size
@@ -28,6 +29,33 @@ class Game:
         self.starry_sky = pygame.sprite.Group()
         self.targets = pygame.sprite.Group()
         self.all = pygame.sprite.Group()
+
+    def mainloop(self):
+        done = False
+
+        # check for exit
+        while not done:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    done = True
+
+            # delta time, game is frame rate indipendent
+            self.deltaTime = 30 / self.clock.tick_busy_loop(60)
+
+            # Refresh screen and update sprites
+            self.screen.fill((0, 0, 0))
+            self.starry_sky.update()
+            self.bullets.update()
+            self.ships.update(pygame.key.get_pressed())
+            self.environment.update()
+            display_label = self.debug_font.render(" Sprites in game:" +
+                                           str(self.all.sprites) +
+                                           ", fps: " + str(self.clock.get_fps()),
+                                           1, (255, 255, 0))
+            GAME.screen.blit(display_label, (0, 0))
+            pygame.display.update()
+
+        pygame.quit()
 
 
 class Test_game(Game):
@@ -77,37 +105,10 @@ class Test_game(Game):
                 self.starry_sky.add(star)
                 self.all.add(star)
 
-    def main(self):
-        done = False
-
-        # check for exit
-        while not done:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    done = True
-
-            # delta time, game is frame rate indipendent
-            self.deltaTime = 30 / self.clock.tick_busy_loop(60)
-
-            # Refresh screen and update sprites
-            self.screen.fill((0, 0, 0))
-            self.starry_sky.update()
-            self.bullets.update()
-            self.ships.update(pygame.key.get_pressed())
-            self.environment.update()
-            display_label = self.debug_font.render(" Sprites in game:" +
-                                           str(self.all.sprites) +
-                                           ", fps: " + str(self.clock.get_fps()),
-                                           1, (255, 255, 0))
-            GAME.screen.blit(display_label, (0, 0))
-            pygame.display.update()
-
-        pygame.quit()
-
 
 if __name__ == "__main__":
     # Initialize pygame
     pygame.init()
 
     GAME = Test_game((1500, 1500), (1300, 800), False)
-    GAME.main()
+    GAME.mainloop()

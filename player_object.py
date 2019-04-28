@@ -8,6 +8,7 @@ class Ship(game_object.Game_Object):
     """Ship game object.
 
     Arguments:
+        game {object} -- game instance
         start_pos {float: array} -- [x, y]
         image {str} -- Ship Image directory
         acceleration {float} -- Ship acceleration
@@ -37,7 +38,7 @@ class Ship(game_object.Game_Object):
         self._controlled = controlled
 
     def __str__(self):
-        return("""    Ship = {
+        return("""Ship = {
         _life: %s,
         _rect: %s,
         _position: %s,
@@ -177,6 +178,7 @@ class Bullet(game_object.Game_Object):
     """Bullet game object shot by sprites according to their angle.
         
         Arguments:
+            game {object} -- game instance
             start_pos {array: float} -- [x, y] start position
             angle {float} -- angle of the vector in degrees
             bullet_speed {float} -- bullet speed

@@ -4,8 +4,15 @@ import pygame
 
 
 class Game_Object(pygame.sprite.Sprite):
-    """Generic game object.
-    Implements sprites rotation and movement.
+    """Generic game object. Implements sprites rotation and movement.
+
+    Arguments:
+        game {object} -- game instance
+        position {float: array} -- [x, y] spawn position
+        image {object} -- pygame image object
+        need_max_rect {bool} -- generate static rect that fits the image indipendently of its angle
+        camera_mode{string} -- normal = not player object
+                               scrolling = locked camera on player ship
     """
 
     def __init__(self, game, position, image, need_max_rect=False, camera_mode="normal"):
@@ -53,14 +60,17 @@ class Game_Object(pygame.sprite.Sprite):
                 self.kill()
 
     def spin(self, value):
-        """spin the object"""
+        """spin the object by value {float} deegree"""
 
         if value != 0:
             self._angle += value
             self._need_update = True
 
     def is_in_screen(self):
-        """return True if the object is in sight"""
+        """return True if the object is in sight
+        
+        Returns:
+            Bool"""
 
         if (abs(self._game.cameraX - self._position[0]) < (self._game.screen_size[0] / 2) and
             abs(self._game.cameraY - self._position[1]) < (self._game.screen_size[1] / 2)):
@@ -71,7 +81,10 @@ class Game_Object(pygame.sprite.Sprite):
         pass #TODO
 
     def get_max_rect(self):
-        """get rect that contains the image at every angolation"""
+        """side lenght of the square which contains the image independently of the its angle.
+        
+        Returns:
+            float"""
 
         self.image_handler()
         rect = self.rotated_image.get_rect()
@@ -112,8 +125,7 @@ class Game_Object(pygame.sprite.Sprite):
         self.rotated_image = pygame.transform.rotate(self._image, self._angle)
 
     def update(self):
-        """Overridden update method.
-        Updates sprite position and image"""
+        """Updates sprite position and image"""
 
         # redefine position and rotate sprite image 
         self._position[0] += self._speed[0] / self._game.deltaTime
@@ -153,15 +165,16 @@ class Game_Object(pygame.sprite.Sprite):
 class Surface(Game_Object):
     """Simple game surface.
     
-        Arguments:
-            position {array: float} -- [x, y] start position
-            dimension {array: float} -- [x, y] polygon dimension
-            color {tuple} -- (R, G, B) color standard
-            need_max_rect {bool} -- True to permit collisions TODO
-            camera_mode {string} -- same as Game_Object
-            spin {float} -- default is 0
-            speed {array: float} -- default is [0, 0]
-            life {float} -- default is immortal object"""
+    Arguments:
+        game {object} -- game instance
+        position {array: float} -- [x, y] spawn position
+        dimension {array: float} -- [x, y] polygon dimension
+        color {tuple} -- (R, G, B) color standard
+        need_max_rect {bool} -- True to have fixed rect size 
+        camera_mode {string} -- same as Game_Object
+        spin {float} -- default is 0
+        speed {array: float} -- default is [0, 0]
+        life {float} -- default is immortal object"""
 
     def __init__(self, game, position, dimension, color, need_max_rect,
                  camera_mode="normal", spin=0, speed=[0, 0],
@@ -184,7 +197,7 @@ class Debris(Game_Object):
 
 
 class Edge(Surface):
-    """Map Edge surface"""
+    """Map Edge surface, child of Surface"""
 
     def __init__(self, game, position, dimension, color):
         super().__init__(game, position, dimension, color, False)
@@ -200,7 +213,7 @@ class Edge(Surface):
 
 
 class Shine(Surface):
-    """lights and shines"""
+    """lights and shines, child of Surface"""
 
     def __init__(self, game, position, angle, spin=0, dimension=[5, 2], color=(155, 155, 0)):
         super().__init__(game, position, dimension, color, False)
@@ -218,7 +231,7 @@ class Shine(Surface):
 
 
 class Stars(Surface):
-    """background stars"""
+    """background stars, child of Surface"""
 
     def __init__(self, game, position, color=(255, 255, 255)):
         super().__init__(game, position, [1, 1], color, False)
