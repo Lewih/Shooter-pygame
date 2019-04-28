@@ -16,7 +16,7 @@ class Ship(game_object.Game_Object):
         spin {float} -- Ship spin
         max_speed {float} -- nominal max vertical speed
         bullet_speed {float} -- Ship bullet speed
-        fire_rate {float} -- fire sleep in game tick / self._game.deltaTime
+        fire_rate {float} -- fire sleep in game tick / self._game.delta_time
         camera_mode{string} -- normal = not player object
                                scrolling = locked camera on player ship
         controlled{bool}  -- ship is controlled by user"""
@@ -66,10 +66,10 @@ class Ship(game_object.Game_Object):
         cos90 = math.cos(math.radians(self._angle + 90))
         sin90 = math.sin(math.radians(self._angle + 90))
 
-        self.rel_max_speed = [self._max_speed * cos, 
+        rel_max_speed = [self._max_speed * cos, 
                               self._max_speed * -sin]
 
-        self.rel_max_h_speed = [self._max_speed * cos90, 
+        rel_max_h_speed = [self._max_speed * cos90, 
                                 self._max_speed * -sin90]
 
         if pressedKeys[pygame.K_UP]:
@@ -78,70 +78,70 @@ class Ship(game_object.Game_Object):
             self._game.environment.add(shine)
             self._game.all.add(shine)
 
-            if self.rel_max_speed[0] > 0:
-                if self._speed[0] <= self.rel_max_speed[0]:
-                    self._speed[0] += self._acceleration * cos / self._game.deltaTime
+            if rel_max_speed[0] > 0:
+                if self._speed[0] <= rel_max_speed[0]:
+                    self._speed[0] += self._acceleration * cos / self._game.delta_time
             else:
-                if self._speed[0] >= self.rel_max_speed[0]:
-                    self._speed[0] += self._acceleration * cos / self._game.deltaTime
+                if self._speed[0] >= rel_max_speed[0]:
+                    self._speed[0] += self._acceleration * cos / self._game.delta_time
 
-            if self.rel_max_speed[1] > 0:
-                if self._speed[1] <= self.rel_max_speed[1]:
-                    self._speed[1] += self._acceleration * -sin / self._game.deltaTime
+            if rel_max_speed[1] > 0:
+                if self._speed[1] <= rel_max_speed[1]:
+                    self._speed[1] += self._acceleration * -sin / self._game.delta_time
             else:
-                if self._speed[1] >= self.rel_max_speed[1]:
-                    self._speed[1] += self._acceleration * -sin / self._game.deltaTime
+                if self._speed[1] >= rel_max_speed[1]:
+                    self._speed[1] += self._acceleration * -sin / self._game.delta_time
 
         elif pressedKeys[pygame.K_DOWN]:
-            if self.rel_max_speed[0] > 0:
-                if self._speed[0] >= -self.rel_max_speed[0]:
-                    self._speed[0] -= self._acceleration * cos / self._game.deltaTime
+            if rel_max_speed[0] > 0:
+                if self._speed[0] >= -rel_max_speed[0]:
+                    self._speed[0] -= self._acceleration * cos / self._game.delta_time
             else:
-                if self._speed[0] <= -self.rel_max_speed[0]:
-                    self._speed[0] -= self._acceleration * cos / self._game.deltaTime
+                if self._speed[0] <= -rel_max_speed[0]:
+                    self._speed[0] -= self._acceleration * cos / self._game.delta_time
 
-            if self.rel_max_speed[1] > 0:
-                if self._speed[1] >= -self.rel_max_speed[1]:
-                    self._speed[1] -= self._acceleration * -sin / self._game.deltaTime
+            if rel_max_speed[1] > 0:
+                if self._speed[1] >= -rel_max_speed[1]:
+                    self._speed[1] -= self._acceleration * -sin / self._game.delta_time
             else:
-                if self._speed[1] <= -self.rel_max_speed[1]:
-                    self._speed[1] -= self._acceleration * -sin / self._game.deltaTime
+                if self._speed[1] <= -rel_max_speed[1]:
+                    self._speed[1] -= self._acceleration * -sin / self._game.delta_time
 
         if pressedKeys[pygame.K_q]:
-            if self.rel_max_h_speed[0] > 0:
-                if self._speed[0] <= self.rel_max_h_speed[0]:
-                    self._speed[0] += self._h_acceleration * cos90 / self._game.deltaTime
+            if rel_max_h_speed[0] > 0:
+                if self._speed[0] <= rel_max_h_speed[0]:
+                    self._speed[0] += self._h_acceleration * cos90 / self._game.delta_time
             else:
-                if self._speed[0] >= self.rel_max_h_speed[0]:
-                    self._speed[0] += self._h_acceleration * cos90 / self._game.deltaTime
+                if self._speed[0] >= rel_max_h_speed[0]:
+                    self._speed[0] += self._h_acceleration * cos90 / self._game.delta_time
 
-            if self.rel_max_h_speed[1] > 0:
-                if self._speed[1] <= self.rel_max_h_speed[1]:
-                    self._speed[1] += self._h_acceleration * -sin90 / self._game.deltaTime
+            if rel_max_h_speed[1] > 0:
+                if self._speed[1] <= rel_max_h_speed[1]:
+                    self._speed[1] += self._h_acceleration * -sin90 / self._game.delta_time
             else:
-                if self._speed[1] >= self.rel_max_h_speed[1]:
-                    self._speed[1] += self._h_acceleration * -sin90 / self._game.deltaTime
+                if self._speed[1] >= rel_max_h_speed[1]:
+                    self._speed[1] += self._h_acceleration * -sin90 / self._game.delta_time
 
         elif pressedKeys[pygame.K_e]:
-            if self.rel_max_h_speed[0] > 0:
-                if self._speed[0] >= -self.rel_max_h_speed[0]:
-                    self._speed[0] -= self._h_acceleration * cos90 / self._game.deltaTime
+            if rel_max_h_speed[0] > 0:
+                if self._speed[0] >= -rel_max_h_speed[0]:
+                    self._speed[0] -= self._h_acceleration * cos90 / self._game.delta_time
             else:
-                if self._speed[0] <= -self.rel_max_h_speed[0]:
-                    self._speed[0] -= self._h_acceleration * cos90 / self._game.deltaTime
+                if self._speed[0] <= -rel_max_h_speed[0]:
+                    self._speed[0] -= self._h_acceleration * cos90 / self._game.delta_time
 
-            if self.rel_max_h_speed[1] > 0:
-                if self._speed[1] >= -self.rel_max_h_speed[1]:
-                    self._speed[1] -= self._h_acceleration * -sin90 / self._game.deltaTime
+            if rel_max_h_speed[1] > 0:
+                if self._speed[1] >= -rel_max_h_speed[1]:
+                    self._speed[1] -= self._h_acceleration * -sin90 / self._game.delta_time
             else:
-                if self._speed[1] <= -self.rel_max_h_speed[1]:
-                    self._speed[1] -= self._h_acceleration * -sin90 / self._game.deltaTime
+                if self._speed[1] <= -rel_max_h_speed[1]:
+                    self._speed[1] -= self._h_acceleration * -sin90 / self._game.delta_time
 
         if pressedKeys[pygame.K_LEFT]:
-            self.spin(self._spin / self._game.deltaTime)
+            self.spin(self._spin / self._game.delta_time)
 
         if pressedKeys[pygame.K_RIGHT]:
-            self.spin(-self._spin / self._game.deltaTime)
+            self.spin(-self._spin / self._game.delta_time)
 
         if pressedKeys[pygame.K_w]:
             self._speed = [0, 0]
@@ -166,7 +166,7 @@ class Ship(game_object.Game_Object):
                 self._game.all.add(shine)
 
         if self._bullet_timer > 0:
-            self._bullet_timer -= 1 / self._game.deltaTime
+            self._bullet_timer -= 1 / self._game.delta_time
 
         if self._controlled:
             self.controls(pressedKeys)

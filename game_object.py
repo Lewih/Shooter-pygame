@@ -34,6 +34,8 @@ class Game_Object(pygame.sprite.Sprite):
         else:
             self.rect = self._image.get_rect(center=position)
         self._position = [position[0], position[1]]
+        self._origin = self._position
+        self._label_position = self._position
         self._camera_mode = camera_mode
         self._need_update = True
 
@@ -47,7 +49,7 @@ class Game_Object(pygame.sprite.Sprite):
         _speed: [%f, %f],
         _spin: %f,
         _angle: %f,
-        _camera: %s}""" % (self._life, self.rect, self.origin, self._position,
+        _camera: %s}""" % (self._life, self.rect, self._origin, self._position,
                            self._speed[0], self._speed[1],
                            self._spin, self._angle, self._camera_mode)
 
@@ -72,8 +74,8 @@ class Game_Object(pygame.sprite.Sprite):
         Returns:
             Bool"""
 
-        if (abs(self._game.cameraX - self._position[0]) < (self._game.screen_size[0] / 2) and
-            abs(self._game.cameraY - self._position[1]) < (self._game.screen_size[1] / 2)):
+        if (abs(self._game.camera_x - self._position[0]) < (self._game.screen_size[0] / 2) and
+            abs(self._game.camera_y - self._position[1]) < (self._game.screen_size[1] / 2)):
             return True
         return False
 
@@ -100,8 +102,8 @@ class Game_Object(pygame.sprite.Sprite):
         for string in values:
             offset += 15
             display_label = self.game.debug_font.render(string, 1, (255, 255, 0))
-            self._game.screen.blit(display_label, (self.label_position[0], 
-                                                   self.label_position[1] + offset))
+            self._game.screen.blit(display_label, (self._label_position[0], 
+                                                   self._label_position[1] + offset))
 
     def display_rect(self):
         pass #TODO
@@ -128,8 +130,8 @@ class Game_Object(pygame.sprite.Sprite):
         """Updates sprite position and image"""
 
         # redefine position and rotate sprite image 
-        self._position[0] += self._speed[0] / self._game.deltaTime
-        self._position[1] += self._speed[1] / self._game.deltaTime
+        self._position[0] += self._speed[0] / self._game.delta_time
+        self._position[1] += self._speed[1] / self._game.delta_time
         self.rect.centerx = int(self._position[0])
         self.rect.centery = int(self._position[1])
 
@@ -138,25 +140,25 @@ class Game_Object(pygame.sprite.Sprite):
             self._need_update = False
 
         if self._camera_mode == 'scrolling':
-            self._game.cameraX = int(self._position[0])
-            self._game.cameraY = int(self._position[1])
+            self._game.camera_x = int(self._position[0])
+            self._game.camera_y = int(self._position[1])
             w, h = self.rotated_image.get_size()
             x = (self._game.screen_size[0] / 2.0) - w / 2
             y = (self._game.screen_size[1] / 2.0) - h / 2
-            self.label_position = (x + 45, y)
+            self._label_position = (x + 45, y)
 
             self._game.screen.blit(self.rotated_image, (x, y))
 
         elif self._camera_mode == "normal" and self.is_in_screen():
              # calculate the upper left origin of the rotated image
-            self.origin = (self._position[0] - self._size[0] / 2 + self.min_box[0] - self.pivot_move[0],
-                           self._position[1] - self._size[1] / 2 - self.max_box[1] + self.pivot_move[1])
-            self.label_position = ((self._game.screen_size[0] / 2) - ((self._game.cameraX - self.origin[0])),
-                                   (self._game.screen_size[1] / 2) - ((self._game.cameraY - self.origin[1])) - 30)
+            self._origin = (self._position[0] - self._size[0] / 2 + self.min_box[0] - self.pivot_move[0],
+                            self._position[1] - self._size[1] / 2 - self.max_box[1] + self.pivot_move[1])
+            self._label_position = ((self._game.screen_size[0] / 2) - ((self._game.camera_x - self._origin[0])),
+                                    (self._game.screen_size[1] / 2) - ((self._game.camera_y - self._origin[1])) - 30)
 
             self._game.screen.blit(self.rotated_image, 
-                                   ((self._game.screen_size[0] / 2) - ((self._game.cameraX - self.origin[0])),
-                                    (self._game.screen_size[1] / 2) - ((self._game.cameraY - self.origin[1]))))
+                                   ((self._game.screen_size[0] / 2) - ((self._game.camera_x - self._origin[0])),
+                                    (self._game.screen_size[1] / 2) - ((self._game.camera_y - self._origin[1]))))
         if self._game.debug:
             self.display_label()
             self.display_rect()
@@ -188,7 +190,7 @@ class Surface(Game_Object):
         self._life = life
 
     def update(self):
-        self.spin(self._spin / self._game.deltaTime)
+        self.spin(self._spin / self._game.delta_time)
         Game_Object.update(self)
 
 
@@ -205,11 +207,11 @@ class Edge(Surface):
         self._need_update = False
 
     def update(self):
-        self.label_position = ((self._game.screen_size[0] / 2) - ((self._game.cameraX - self.rect.x)),
-                               (self._game.screen_size[1] / 2) - ((self._game.cameraY - self.rect.y)) - 30)
+        self._label_position = ((self._game.screen_size[0] / 2) - ((self._game.camera_x - self.rect.x)),
+                                (self._game.screen_size[1] / 2) - ((self._game.camera_y - self.rect.y)) - 30)
         self._game.screen.blit(self._image, 
-                               ((self._game.screen_size[0] / 2) - ((self._game.cameraX - self.rect.x)),
-                                (self._game.screen_size[1] / 2) - ((self._game.cameraY - self.rect.y))))
+                               ((self._game.screen_size[0] / 2) - ((self._game.camera_x - self.rect.x)),
+                                (self._game.screen_size[1] / 2) - ((self._game.camera_y - self.rect.y))))
 
 
 class Shine(Surface):
@@ -224,7 +226,7 @@ class Shine(Surface):
         self._spin = spin
     
     def update(self):
-        self._time2live -= 1 / self._game.deltaTime
+        self._time2live -= 1 / self._game.delta_time
         if self._time2live < 0:
             self.kill()
         Game_Object.update(self) # no spin for shines due to performance issue TODO
