@@ -10,7 +10,7 @@ python3 -m pip install -U pygame --user
 
 then run:
 
-```bash
+```shell
 python3 game_mode.py
 ```
 
