@@ -4,7 +4,7 @@
 
 In order to run this game please install pygame:
 
-```python
+```shell
 python3 -m pip install -U pygame --user
 ```
 
@@ -15,3 +15,4 @@ python3 game_mode.py
 ```
 
 **and enjoy the game!**
+ 
