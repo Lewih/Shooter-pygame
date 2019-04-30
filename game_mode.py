@@ -15,7 +15,8 @@ class Game:
         # self.delta_time = 0
 
         # Setting up the screen
-        self.screen = pygame.display.set_mode(self.screen_size)
+        self.screen = pygame.display.set_mode(self.screen_size, pygame.DOUBLEBUF)
+        self.screen.set_alpha(None) # disable to use collide mask TODO
 
         # Game clock setting
         self.clock = pygame.time.Clock()
@@ -24,40 +25,11 @@ class Game:
         self.ships = pygame.sprite.Group()
         self.bullets = pygame.sprite.Group()
         self.edge = pygame.sprite.Group()
-        self.rectangles = pygame.sprite.Group()
+        self.allies = pygame.sprite.Group()
         self.environment = pygame.sprite.Group()
         self.starry_sky = pygame.sprite.Group()
         self.targets = pygame.sprite.Group()
         self.all = pygame.sprite.Group()
-
-    def mainloop(self):
-        """Main game loop
-        """
-        done = False
-
-        # check for exit
-        while not done:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    done = True
-
-            # delta time, game is frame rate indipendent
-            self.delta_time = 30 / self.clock.tick_busy_loop(60)
-
-            # Refresh screen and update sprites
-            self.screen.fill((0, 0, 0))
-            self.starry_sky.update()
-            self.bullets.update()
-            self.ships.update(pygame.key.get_pressed())
-            self.environment.update()
-            display_label = self.debug_font.render(" Sprites in game:" +
-                                                   str(self.all.sprites) +
-                                                   ", fps: " + str(self.clock.get_fps()),
-                                                   1, (255, 255, 0))
-            GAME.screen.blit(display_label, (0, 0))
-            pygame.display.update()
-
-        pygame.quit()
 
 
 class TestGame(Game):
@@ -67,12 +39,15 @@ class TestGame(Game):
         super().__init__(map_size, screen_size, debug)
 
         # User
-        self.user = player_object.Ship(self, [100, 200], 'Images/ship.png',
+        self.user = player_object.Ship(self, [self.map_size[0] / 2, self.map_size[1] / 2 + 100],
+                                       'Images/ship.png',
                                        0.7, 0.4, 10, 10.0, 10.0, 7,
                                        camera_mode='scrolling', controlled=True)
         self.camera_x = 100
         self.camera_y = 200
         self.ships.add(self.user)
+        self.allies.add(self.user)
+        self.all.add(self.user)
 
         # Finalize screen caption
         pygame.display.set_caption("Shooter")
@@ -87,15 +62,16 @@ class TestGame(Game):
             self.edge.add(item)
             self.environment.add(item)
             self.targets.add(item)
+            self.allies.add(item)
             self.all.add(item)
 
         # test objects
-        for x in range(100):
-            test = game_object.Surface(self, [random.randint(1, map_size[0]),
-                                              random.randint(1, map_size[1])],
-                                       [60, 60], (0, 0, 255), True, spin=1,
-                                       speed=[0, 0], life=5)
-            self.rectangles.add(test)
+        for x in range(20):
+            test = game_object.Surface(self, pygame.image.load("Images/asteroid.png").convert(),
+                                       [random.randint(1, map_size[0]),
+                                        random.randint(1, map_size[1])],
+                                       True, 8, spin=random.uniform(-2, 2),
+                                       speed=[random.uniform(-3, 3), random.uniform(-3, 3)], life=5)
             self.environment.add(test)
             self.targets.add(test)
             self.all.add(test)
@@ -108,11 +84,67 @@ class TestGame(Game):
                                           random.randint(0, self.map_size[1])))
                 self.starry_sky.add(star)
                 self.all.add(star)
+        
+        # base
+        self._base = game_object.Surface(self, pygame.image.load("Images/base.png").convert(),
+                                         [self.map_size[0] / 2, self.map_size[1] / 2],
+                                         True, 0, spin=0.5, life=200)
+        self._base.rect.width = 400
+        self._base.rect.height = 400
+        self.environment.add(self._base)
+        self.allies.add(self._base)
 
+    def mainloop(self):
+        """Main game loop
+        """
+        done = False
+        counter = 0
+
+        # check for exit
+        while not done:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    done = True
+
+            # delta time, game is frame rate indipendent
+            self.delta_time = 30 / self.clock.tick_busy_loop(60)
+
+            counter += 1 / self.delta_time
+            if counter / 60 > 1: # TODO optimize position
+                counter = 0
+                position = [random.randint(1, self.map_size[0]),
+                            random.randint(1, self.map_size[1])]
+                test = game_object.Surface(self, pygame.image.load("Images/asteroid.png").convert(),
+                                           position,
+                                           True, 8, spin=random.uniform(-2, 2),
+                                           speed=[random.uniform(-3, 3), random.uniform(-3, 3)], life=5)
+                self.environment.add(test)
+                self.targets.add(test)
+                self.all.add(test)
+
+            # keys events
+            keys = pygame.key.get_pressed()
+
+            # pause the game
+            if not keys[pygame.K_a]:
+                # Refresh screen and update sprites
+                self.screen.fill((0, 0, 0))
+                self.starry_sky.update()
+                self.bullets.update()
+                self.ships.update(keys)
+                self.environment.update()
+                display_label = self.debug_font.render(" Sprites in game:" +
+                                                        str(self.all.sprites) +
+                                                        ", fps: " + str(self.clock.get_fps()),
+                                                        1, (255, 255, 0))
+                GAME.screen.blit(display_label, (0, 0))
+                pygame.display.update()
+
+        pygame.quit()
 
 if __name__ == "__main__":
     # Initialize pygame
     pygame.init()
 
-    GAME = TestGame((1500, 1500), (1300, 800), False)
+    GAME = TestGame((2500, 2500), (1300, 800), False) # mapsize, screensize, debug_enable
     GAME.mainloop()

@@ -9,33 +9,36 @@ class Game_Object(pygame.sprite.Sprite):
     Arguments:
         game {object} -- game instance
         position {float: array} -- [x, y] spawn position
-        image {object} -- pygame image object
+        image {object} -- pygame surface
+        debuggable {bool} -- object shows rect and label if game runs in debug mode 
         need_max_rect {bool} -- generate static rect that fits the image indipendently of its angle
-        camera_mode{string} -- normal = not player object
+        camera_mode {string} -- normal = not player object
                                scrolling = locked camera on player ship
     """
 
-    def __init__(self, game, position, image, need_max_rect=False, camera_mode="normal"):
+    def __init__(self, game, position, image, debuggable, need_max_rect=False, camera_mode="normal"):
         super().__init__()
         self._game = game
         self._image = image
-        self._size = self._image.get_size()
+        if image:
+            self._size = self._image.get_size()
         self._life = "immortal"
         self._speed = [0, 0] # [x, y]
         self._angle = 0
         self._spin = 0
+        self._debuggable = debuggable
         self.image_handler() # initialize image attributes
         if need_max_rect:
-            self.max_rect = self.get_max_rect()
+            max_rect = self.get_max_rect()
             self.rect = pygame.Rect((0, 0),
-                                    (self.max_rect,
-                                     self.max_rect))
+                                    (max_rect,
+                                     max_rect))
             self.rect.center = position
         else:
             self.rect = self._image.get_rect(center=position)
         self._position = [position[0], position[1]]
         self._origin = self._position
-        self._label_position = self._position
+        self._label_position = self._position # required in debug
         self._camera_mode = camera_mode
         self._need_update = True
 
@@ -62,7 +65,7 @@ class Game_Object(pygame.sprite.Sprite):
                 self.kill()
 
     def spin(self, value):
-        """spin the object by value {float} deegree"""
+        """spin the object by value {float} degree"""
 
         if value != 0:
             self._angle += value
@@ -74,8 +77,8 @@ class Game_Object(pygame.sprite.Sprite):
         Returns:
             Bool"""
 
-        if (abs(self._game.camera_x - self._position[0]) < (self._game.screen_size[0] / 2) and
-            abs(self._game.camera_y - self._position[1]) < (self._game.screen_size[1] / 2)):
+        if (abs(self._game.camera_x - self._position[0]) < (self._game.screen_size[0] / 2 + 200) and
+            abs(self._game.camera_y - self._position[1]) < (self._game.screen_size[1] / 2) + 200):
             return True
         return False
 
@@ -93,7 +96,7 @@ class Game_Object(pygame.sprite.Sprite):
         return (rect.width**2 + rect.height**2)**0.5
 
     def display_label(self):
-        """Display object __str__ as a label in game"""
+        """Debug mode.Display object __str__ as a label in game"""
 
         values = self.__str__()
         values = values.split("\n")
@@ -101,12 +104,17 @@ class Game_Object(pygame.sprite.Sprite):
 
         for string in values:
             offset += 15
-            display_label = self.game.debug_font.render(string, 1, (255, 255, 0))
+            display_label = self._game.debug_font.render(string, 1, (255, 255, 0))
             self._game.screen.blit(display_label, (self._label_position[0], 
                                                    self._label_position[1] + offset))
 
     def display_rect(self):
-        pass #TODO
+        """Debug mode.Display sprite rect on screen"""
+
+        new_rect = self.rect.copy()
+        new_rect.topleft = self._label_position
+        pygame.draw.rect(self._game.screen, (255, 0, 0),
+                         new_rect, 1)
 
     def image_handler(self):
         """Redefine rotated image and center"""
@@ -145,7 +153,8 @@ class Game_Object(pygame.sprite.Sprite):
             w, h = self.rotated_image.get_size()
             x = (self._game.screen_size[0] / 2.0) - w / 2
             y = (self._game.screen_size[1] / 2.0) - h / 2
-            self._label_position = (x + 45, y)
+            self._label_position = ((self._game.screen_size[0] / 2.0) - self.rect.width / 2,
+                                    (self._game.screen_size[1] / 2.0) - self.rect.height / 2)
 
             self._game.screen.blit(self.rotated_image, (x, y))
 
@@ -153,62 +162,70 @@ class Game_Object(pygame.sprite.Sprite):
              # calculate the upper left origin of the rotated image
             self._origin = (self._position[0] - self._size[0] / 2 + self.min_box[0] - self.pivot_move[0],
                             self._position[1] - self._size[1] / 2 - self.max_box[1] + self.pivot_move[1])
-            self._label_position = ((self._game.screen_size[0] / 2) - ((self._game.camera_x - self._origin[0])),
-                                    (self._game.screen_size[1] / 2) - ((self._game.camera_y - self._origin[1])) - 30)
+            self._label_position = ((self._game.screen_size[0] / 2) - (self._game.camera_x - self.rect.x),
+                                    (self._game.screen_size[1] / 2) - (self._game.camera_y - self.rect.y))
 
             self._game.screen.blit(self.rotated_image, 
                                    ((self._game.screen_size[0] / 2) - ((self._game.camera_x - self._origin[0])),
                                     (self._game.screen_size[1] / 2) - ((self._game.camera_y - self._origin[1]))))
-        if self._game.debug:
+
+        if self._game.debug and self.is_in_screen() and self._debuggable:
             self.display_label()
             self.display_rect()
 
 
 class Surface(Game_Object):
-    """Simple game surface.
+    """Generic game surface.
     
     Arguments:
         game {object} -- game instance
+        image {object} -- pygame surface
         position {array: float} -- [x, y] spawn position
-        dimension {array: float} -- [x, y] polygon dimension
-        color {tuple} -- (R, G, B) color standard
-        need_max_rect {bool} -- True to have fixed rect size 
+        need_max_rect {bool} -- True to have fixed rect size
+        debuggable {bool} -- object shows rect and label if game runs in debug mode  
         camera_mode {string} -- same as Game_Object
         spin {float} -- default is 0
         speed {array: float} -- default is [0, 0]
         life {float} -- default is immortal object"""
 
-    def __init__(self, game, position, dimension, color, need_max_rect,
-                 camera_mode="normal", spin=0, speed=[0, 0],
+    def __init__(self, game, image, position, need_max_rect, damage = 5,
+                 debuggable=True, camera_mode="normal", spin=0, speed=[0, 0],
                  life="immortal"):
-        super().__init__(game, position, pygame.Surface(dimension, pygame.SRCALPHA).convert_alpha(),
-                         need_max_rect=need_max_rect, camera_mode=camera_mode)
-        self._color = color
-        self._image.fill(color)
+        super().__init__(game, position, image,
+                         debuggable, need_max_rect=need_max_rect, camera_mode=camera_mode)
         self._spin = spin
         self._speed = speed
         self._life = life
+        self._damage = damage
 
     def update(self):
         self.spin(self._spin / self._game.delta_time)
+        for caught in pygame.sprite.spritecollide(self, self._game.allies, False):
+            if not self._game.allies.has(self):
+                self.kill()
+                caught.hit(self._damage)
+                for x in range(30):
+                    shine = Shine(self._game, [self.rect.centerx, self.rect.centery], self._angle)
+                    self._game.environment.add(shine)
+                    self._game.all.add(shine)
+
         Game_Object.update(self)
-
-
-class Debris(Game_Object):
-    pass #TODO
 
 
 class Edge(Surface):
     """Map Edge surface, child of Surface"""
 
     def __init__(self, game, position, dimension, color):
-        super().__init__(game, position, dimension, color, False)
+        super().__init__(game, pygame.Surface(dimension, pygame.SRCALPHA).convert(),
+                         position, False)
+        self._color = color
+        self._image.fill(color)
         self.rect = self._image.get_rect(topleft=position)
         self._need_update = False
 
     def update(self):
         self._label_position = ((self._game.screen_size[0] / 2) - ((self._game.camera_x - self.rect.x)),
-                                (self._game.screen_size[1] / 2) - ((self._game.camera_y - self.rect.y)) - 30)
+                                (self._game.screen_size[1] / 2) - ((self._game.camera_y - self.rect.y)))
         self._game.screen.blit(self._image, 
                                ((self._game.screen_size[0] / 2) - ((self._game.camera_x - self.rect.x)),
                                 (self._game.screen_size[1] / 2) - ((self._game.camera_y - self.rect.y))))
@@ -218,7 +235,10 @@ class Shine(Surface):
     """lights and shines, child of Surface"""
 
     def __init__(self, game, position, angle, spin=0, dimension=[5, 2], color=(155, 155, 0)):
-        super().__init__(game, position, dimension, color, False)
+        super().__init__(game, pygame.Surface(dimension, pygame.SRCALPHA).convert(),
+                         position, False,  debuggable=False)
+        self._color = color
+        self._image.fill(color)
         self._angle = random.randint(0, 360)
         self._speed = [(-math.cos(math.radians(angle))) * random.randint(0, 7) + random.uniform(-1, 1),
                        (math.sin(math.radians(angle))) * random.randint(0, 7) + random.uniform(-1, 1)] 
@@ -236,7 +256,10 @@ class Stars(Surface):
     """background stars, child of Surface"""
 
     def __init__(self, game, position, color=(255, 255, 255)):
-        super().__init__(game, position, [1, 1], color, False)
+        super().__init__(game, pygame.Surface([1, 1], pygame.SRCALPHA).convert(), 
+                         position, False,  debuggable=False)
+        self._color = color
+        self._image.fill(color)
     
     def update(self):
         Game_Object.update(self)
