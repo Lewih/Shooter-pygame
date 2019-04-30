@@ -63,6 +63,13 @@ class Game_Object(pygame.sprite.Sprite):
             self._life -= damage
             if self._life <= 0:
                 self.kill()
+                for x in range(50):
+                    shine = Shine(self._game, [self.rect.centerx, self.rect.centery],
+                                  random.randint(1, 360), spin=random.uniform(-2, 2),
+                                  color=(random.randint(1, 255), random.randint(1, 255),
+                                         random.randint(1, 255)))
+                    self._game.environment.add(shine)
+                    self._game.all.add(shine)
 
     def spin(self, value):
         """spin the object by value {float} degree"""
