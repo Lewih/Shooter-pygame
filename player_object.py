@@ -9,24 +9,25 @@ class Ship(game_object.Game_Object):
 
     Arguments:
         game {object} -- game instance
-        start_pos {float: array} -- [x, y]
-        image {str} -- Ship Image directory
+        image {str} -- pygame surface object
+        start_pos {float: array} -- [x, y] spawn point
         acceleration {float} -- Ship acceleration
         h_acceleration {float} -- horizontal acceleration
         spin {float} -- Ship spin
         max_speed {float} -- nominal max vertical speed
         bullet_speed {float} -- Ship bullet speed
         fire_rate {float} -- fire sleep in game tick / self._game.delta_time
-        camera_mode{string} -- normal = not player object
+        camera_mode {string} -- normal = not player object
                                scrolling = locked camera on player ship
-        controlled{bool}  -- ship is controlled by user"""
+        controlled {bool}  -- ship is controlled by user"""
     
-    def __init__(self, game, start_pos, image, acceleration,
+    def __init__(self, game, image, start_pos, acceleration,
                  h_acceleration, spin, max_speed, bullet_speed,
-                 fire_rate, camera_mode='normal', controlled=False):
-        super().__init__(game, start_pos, pygame.image.load(image).convert(),
-                         True ,need_max_rect=True, camera_mode=camera_mode)
-        self._image_dir = image
+                 fire_rate, camera_mode='normal', controlled=False,
+                 need_max_rect=True):
+        super().__init__(game, start_pos, image, True,
+                         need_max_rect=need_max_rect,
+                         camera_mode=camera_mode)
         self._life = 100.0
         self._acceleration = acceleration
         self._original_spin = spin
@@ -58,7 +59,7 @@ class Ship(game_object.Game_Object):
         _controlled: %d}""" % (self._life, self.rect, self._position, self._speed[0], self._speed[1],
                                self._angle, self._acceleration, self._max_speed, self._h_acceleration,
                                self._spin, self._bullet_speed, self._fire_rate, self._bullet_timer,
-                               self._image_dir, self._camera_mode, self._controlled))
+                               self._image, self._camera_mode, self._controlled))
 
     def controls(self, pressedKeys):
         """keyboard handling"""
@@ -95,6 +96,11 @@ class Ship(game_object.Game_Object):
                     self._speed[1] += self._acceleration * -sin / self._game.delta_time
 
         elif pressedKeys[pygame.K_DOWN]:
+            shine = game_object.Shine(self._game, [self.rect.centerx, self.rect.centery],
+                                      self._angle + 180, dimension=[2, 2], color=(255, 255, 255))
+            self._game.environment.add(shine)
+            self._game.all.add(shine)
+
             if rel_max_speed[0] > 0:
                 if self._speed[0] >= -rel_max_speed[0]:
                     self._speed[0] -= self._acceleration * cos / self._game.delta_time

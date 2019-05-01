@@ -39,9 +39,9 @@ class TestGame(Game):
         super().__init__(map_size, screen_size, debug)
 
         # User
-        self.user = player_object.Ship(self, [self.map_size[0] / 2, self.map_size[1] / 2 + 100],
-                                       'Images/ship.png',
-                                       0.7, 0.4, 10, 10.0, 10.0, 7,
+        self.user = player_object.Ship(self, pygame.image.load('Images/ship.png').convert(), 
+                                       [self.map_size[0] / 2, self.map_size[1] / 2 + 100],
+                                       0.7, 0.4, 10, 10.0, 10.0, 7, need_max_rect=False,
                                        camera_mode='scrolling', controlled=True)
         self.camera_x = 100
         self.camera_y = 200
@@ -70,7 +70,7 @@ class TestGame(Game):
             test = game_object.Surface(self, pygame.image.load("Images/asteroid.png").convert(),
                                        [random.randint(1, map_size[0]),
                                         random.randint(1, map_size[1])],
-                                       True, 8, spin=random.uniform(-2, 2),
+                                       False, 8, spin=random.uniform(-2, 2),
                                        speed=[random.uniform(-3, 3), random.uniform(-3, 3)], life=5)
             self.environment.add(test)
             self.targets.add(test)
@@ -86,13 +86,11 @@ class TestGame(Game):
                 self.all.add(star)
         
         # base
-        self._base = game_object.Surface(self, pygame.image.load("Images/base.png").convert(),
+        self.base = game_object.Surface(self, pygame.image.load("Images/base.png").convert(),
                                          [self.map_size[0] / 2, self.map_size[1] / 2],
-                                         True, 0, spin=0.5, life=200)
-        self._base.rect.width = 400
-        self._base.rect.height = 400
-        self.environment.add(self._base)
-        self.allies.add(self._base)
+                                         False, 0, spin=0.5, life=200)
+        self.environment.add(self.base)
+        self.allies.add(self.base)
 
     def mainloop(self):
         """Main game loop
@@ -109,14 +107,18 @@ class TestGame(Game):
             # delta time, game is frame rate indipendent
             self.delta_time = 30 / self.clock.tick_busy_loop(60)
 
+            # asteroids spawn
             counter += 1 / self.delta_time
             if counter / 60 > 1: # TODO optimize position
                 counter = 0
                 position = [random.randint(1, self.map_size[0]),
                             random.randint(1, self.map_size[1])]
+                while self.user.distance_from(position) < 350 and self.base.distance_from(position) < 600:
+                    position = [random.randint(1, self.map_size[0]),
+                                random.randint(1, self.map_size[1])]
                 test = game_object.Surface(self, pygame.image.load("Images/asteroid.png").convert(),
                                            position,
-                                           True, 8, spin=random.uniform(-2, 2),
+                                           False, 8, spin=random.uniform(-2, 2),
                                            speed=[random.uniform(-3, 3), random.uniform(-3, 3)], life=5)
                 self.environment.add(test)
                 self.targets.add(test)

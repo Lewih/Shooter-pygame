@@ -56,20 +56,35 @@ class Game_Object(pygame.sprite.Sprite):
                            self._speed[0], self._speed[1],
                            self._spin, self._angle, self._camera_mode)
 
+    def explode(self, color=None):
+        """kill the sprite and make fireworks"""
+
+        self.kill()
+        if color: # reduntant code due to performance issue TODO
+            for x in range(50):
+                shine = Shine(self._game, [self.rect.centerx, self.rect.centery],
+                              random.randint(1, 360), spin=random.uniform(-2, 2),
+                              color=color)
+                self._game.environment.add(shine)
+                self._game.all.add(shine)
+        else:
+            for x in range(50):
+                shine = Shine(self._game, [self.rect.centerx, self.rect.centery],
+                              random.randint(1, 360), spin=random.uniform(-2, 2),
+                              color=
+                              (random.randint(1, 255),
+                               random.randint(1, 255),
+                               random.randint(1, 255)))
+                self._game.environment.add(shine)
+                self._game.all.add(shine)
+
     def hit(self, damage):
         """hit the object, life drops according to damage {int}"""
 
         if self._life != "immortal":
             self._life -= damage
             if self._life <= 0:
-                self.kill()
-                for x in range(50):
-                    shine = Shine(self._game, [self.rect.centerx, self.rect.centery],
-                                  random.randint(1, 360), spin=random.uniform(-2, 2),
-                                  color=(random.randint(1, 255), random.randint(1, 255),
-                                         random.randint(1, 255)))
-                    self._game.environment.add(shine)
-                    self._game.all.add(shine)
+                self.explode()
 
     def spin(self, value):
         """spin the object by value {float} degree"""
@@ -79,18 +94,26 @@ class Game_Object(pygame.sprite.Sprite):
             self._need_update = True
 
     def is_in_screen(self):
-        """return True if the object is in sight
+        """Object is in screen
         
         Returns:
-            Bool"""
+            Bool -- True if the object is in sight"""
 
         if (abs(self._game.camera_x - self._position[0]) < (self._game.screen_size[0] / 2 + 200) and
             abs(self._game.camera_y - self._position[1]) < (self._game.screen_size[1] / 2) + 200):
             return True
         return False
 
-    def distance_from(self, obj):
-        pass #TODO
+    def distance_from(self, point):
+        """Euclidean distance between point and self calculated according to its _position attribute.
+        Arguments:
+            point {tuple: float}
+
+        Returns:
+            float -- absolute distance"""
+
+        return ((self._position[0] - point[0])**2 +
+                (self._position[1] - point[1])**2)**0.5 
 
     def get_max_rect(self):
         """side lenght of the square which contains the image independently of the its angle.
@@ -155,6 +178,7 @@ class Game_Object(pygame.sprite.Sprite):
             self._need_update = False
 
         if self._camera_mode == 'scrolling':
+            # user ship handling with camera position
             self._game.camera_x = int(self._position[0])
             self._game.camera_y = int(self._position[1])
             w, h = self.rotated_image.get_size()
@@ -162,16 +186,17 @@ class Game_Object(pygame.sprite.Sprite):
             y = (self._game.screen_size[1] / 2.0) - h / 2
             self._label_position = ((self._game.screen_size[0] / 2.0) - self.rect.width / 2,
                                     (self._game.screen_size[1] / 2.0) - self.rect.height / 2)
-
+            # blitting
             self._game.screen.blit(self.rotated_image, (x, y))
 
         elif self._camera_mode == "normal" and self.is_in_screen():
-             # calculate the upper left origin of the rotated image
+            # calculate the center origin of the rotated image
             self._origin = (self._position[0] - self._size[0] / 2 + self.min_box[0] - self.pivot_move[0],
                             self._position[1] - self._size[1] / 2 - self.max_box[1] + self.pivot_move[1])
+            # calculate the debug info position
             self._label_position = ((self._game.screen_size[0] / 2) - (self._game.camera_x - self.rect.x),
                                     (self._game.screen_size[1] / 2) - (self._game.camera_y - self.rect.y))
-
+            # blitting
             self._game.screen.blit(self.rotated_image, 
                                    ((self._game.screen_size[0] / 2) - ((self._game.camera_x - self._origin[0])),
                                     (self._game.screen_size[1] / 2) - ((self._game.camera_y - self._origin[1]))))
@@ -195,11 +220,12 @@ class Surface(Game_Object):
         speed {array: float} -- default is [0, 0]
         life {float} -- default is immortal object"""
 
-    def __init__(self, game, image, position, need_max_rect, damage = 5,
+    def __init__(self, game, image, position, need_max_rect=False, damage=5,
                  debuggable=True, camera_mode="normal", spin=0, speed=[0, 0],
                  life="immortal"):
         super().__init__(game, position, image,
-                         debuggable, need_max_rect=need_max_rect, camera_mode=camera_mode)
+                         debuggable, need_max_rect=need_max_rect,
+                         camera_mode=camera_mode)
         self._spin = spin
         self._speed = speed
         self._life = life
@@ -209,12 +235,8 @@ class Surface(Game_Object):
         self.spin(self._spin / self._game.delta_time)
         for caught in pygame.sprite.spritecollide(self, self._game.allies, False):
             if not self._game.allies.has(self):
-                self.kill()
+                self.explode(color=(255, 0, 0))
                 caught.hit(self._damage)
-                for x in range(30):
-                    shine = Shine(self._game, [self.rect.centerx, self.rect.centery], self._angle)
-                    self._game.environment.add(shine)
-                    self._game.all.add(shine)
 
         Game_Object.update(self)
 
