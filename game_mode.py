@@ -113,9 +113,10 @@ class TestGame(Game):
                 counter = 0
                 position = [random.randint(1, self.map_size[0]),
                             random.randint(1, self.map_size[1])]
-                while self.user.distance_from(position) < 350 and self.base.distance_from(position) < 600:
+                while self.user.distance_from(position) < 450 or self.base.distance_from(position) < 800:
                     position = [random.randint(1, self.map_size[0]),
                                 random.randint(1, self.map_size[1])]
+
                 test = game_object.Surface(self, pygame.image.load("Images/asteroid.png").convert(),
                                            position,
                                            False, 8, spin=random.uniform(-2, 2),
@@ -148,5 +149,5 @@ if __name__ == "__main__":
     # Initialize pygame
     pygame.init()
 
-    GAME = TestGame((2500, 2500), (1300, 800), False) # mapsize, screensize, debug_enable
+    GAME = TestGame((2500, 2500), (1300, 800), True) # mapsize, screensize, debug_enable
     GAME.mainloop()

@@ -52,9 +52,10 @@ class Game_Object(pygame.sprite.Sprite):
         _speed: [%f, %f],
         _spin: %f,
         _angle: %f,
-        _camera: %s}""" % (self._life, self.rect, self._origin, self._position,
+        _camera: %s,
+        _distance_from_base: %s}""" % (self._life, self.rect, self._origin, self._position,
                            self._speed[0], self._speed[1],
-                           self._spin, self._angle, self._camera_mode)
+                           self._spin, self._angle, self._camera_mode, self.distance_from(self._game.base._position))
 
     def explode(self, color=None):
         """kill the sprite and make fireworks"""
