@@ -137,7 +137,7 @@ class TestGame(Game):
                 self.ships.update(keys)
                 self.environment.update()
                 display_label = self.debug_font.render(" Sprites in game:" +
-                                                        str(self.all.sprites) +
+                                                        str(len(self.all.sprites())) +
                                                         ", fps: " + str(self.clock.get_fps()),
                                                         1, (255, 255, 0))
                 GAME.screen.blit(display_label, (0, 0))
