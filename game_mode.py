@@ -149,5 +149,5 @@ if __name__ == "__main__":
     # Initialize pygame
     pygame.init()
 
-    GAME = TestGame((2500, 2500), (1300, 800), True) # mapsize, screensize, debug_enable
+    GAME = TestGame((2500, 2500), (1300, 800), False) # mapsize, screensize, debug_enable
     GAME.mainloop()
