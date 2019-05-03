@@ -1,5 +1,6 @@
 import random
 import pygame
+from PIL import Image
 import game_object
 import player_object
 
@@ -76,19 +77,22 @@ class TestGame(Game):
             self.targets.add(test)
             self.all.add(test)
 
-        # Starry sky
+        # Starry sky, randomly generated
+        img = Image.new('RGB', map_size)
+        pixel_map = img.load()
         if not self.debug:
             for x in range(1000):
-                star = game_object.Stars(self,
-                                         (random.randint(0, self.map_size[0]),
-                                          random.randint(0, self.map_size[1])))
-                self.starry_sky.add(star)
-                self.all.add(star)
+                pixel_map[random.randint(0, self.map_size[0] - 1),
+                          random.randint(0, self.map_size[1] - 1)] = (255, 255, 255, 0)
+        stars = game_object.Background(self, pygame.image.frombuffer(img.tobytes("raw", "RGB"), map_size, "RGB").convert())
+        self.starry_sky.add(stars)
+        self.all.add(stars)
+        img.close()
         
         # base
         self.base = game_object.Surface(self, pygame.image.load("Images/base.png").convert_alpha(),
-                                         [self.map_size[0] / 2, self.map_size[1] / 2],
-                                         False, 0, spin=0.5, life=200)
+                                        [self.map_size[0] / 2, self.map_size[1] / 2],
+                                        False, 0, spin=0.5, life=200)
         self.environment.add(self.base)
         self.allies.add(self.base)
 

@@ -207,6 +207,26 @@ class Game_Object(pygame.sprite.Sprite):
             self.display_rect()
 
 
+class Background(pygame.sprite.Sprite):
+    """background stars
+    
+    Arguments:
+        game {object} -- game instance
+        image {object} -- pygame surface"""
+
+    def __init__(self, game, image):
+        super().__init__()
+        self._game = game
+        self._image = image
+        self.rect = self._image.get_rect(topleft=(0, 0))
+    
+    def update(self):
+        # blitting
+        self._game.screen.blit(self._image, 
+                               ((self._game.screen_size[0] / 2) - ((self._game.camera_x)),
+                                (self._game.screen_size[1] / 2) - ((self._game.camera_y))))
+
+
 class Surface(Game_Object):
     """Generic game surface.
     
@@ -280,16 +300,3 @@ class Shine(Surface):
         if self._time2live < 0:
             self.kill()
         Game_Object.update(self) # no spin for shines due to performance issue TODO
-
-
-class Stars(Surface):
-    """background stars, child of Surface"""
-
-    def __init__(self, game, position, color=(255, 255, 255)):
-        super().__init__(game, pygame.Surface([1, 1], pygame.SRCALPHA).convert(), 
-                         position, False,  debuggable=False)
-        self._color = color
-        self._image.fill(color)
-    
-    def update(self):
-        Game_Object.update(self)

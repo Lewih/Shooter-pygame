@@ -5,7 +5,7 @@
 In order to run this game please install pygame:
 
 ```shell
-python3 -m pip install -U pygame --user
+python3 -m pip install pygame pillow
 ```
 
 then run:
