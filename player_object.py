@@ -37,7 +37,7 @@ class Ship(game_object.Game_Object):
         self._bullet_speed = bullet_speed
         self._fire_rate = fire_rate
         self._bullet_timer = 0
-        self._bullet_image = pygame.image.load("Images/bullet.png").convert()
+        self._bullet_image = pygame.image.load("Images/bullet.png").convert_alpha()
         self._controlled = controlled
 
     def __str__(self):

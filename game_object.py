@@ -266,7 +266,7 @@ class Edge(Surface):
     """Map Edge surface, child of Surface"""
 
     def __init__(self, game, position, dimension, color):
-        super().__init__(game, pygame.Surface(dimension, pygame.SRCALPHA).convert(),
+        super().__init__(game, pygame.Surface(dimension, pygame.SRCALPHA).convert_alpha(),
                          position, False)
         self._color = color
         self._image.fill(color)
@@ -285,7 +285,7 @@ class Shine(Surface):
     """lights and shines, child of Surface"""
 
     def __init__(self, game, position, angle, spin=0, dimension=[5, 2], color=(155, 155, 0)):
-        super().__init__(game, pygame.Surface(dimension, pygame.SRCALPHA).convert(),
+        super().__init__(game, pygame.Surface(dimension, pygame.SRCALPHA).convert_alpha(),
                          position, False,  debuggable=False)
         self._color = color
         self._image.fill(color)
