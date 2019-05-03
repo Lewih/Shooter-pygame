@@ -16,7 +16,7 @@ class Game:
 
         # Setting up the screen
         self.screen = pygame.display.set_mode(self.screen_size, pygame.DOUBLEBUF)
-        self.screen.set_alpha(None) # disable to use collide mask TODO
+        #self.screen.set_alpha(None) # disable to use collide mask TODO
 
         # Game clock setting
         self.clock = pygame.time.Clock()
@@ -39,7 +39,7 @@ class TestGame(Game):
         super().__init__(map_size, screen_size, debug)
 
         # User
-        self.user = player_object.Ship(self, pygame.image.load('Images/ship.png').convert(), 
+        self.user = player_object.Ship(self, pygame.image.load('Images/ship.png').convert_alpha(), 
                                        [self.map_size[0] / 2, self.map_size[1] / 2 + 100],
                                        0.7, 0.4, 10, 10.0, 10.0, 7, need_max_rect=False,
                                        camera_mode='scrolling', controlled=True)
@@ -67,7 +67,7 @@ class TestGame(Game):
 
         # test objects
         for x in range(20):
-            test = game_object.Surface(self, pygame.image.load("Images/asteroid.png").convert(),
+            test = game_object.Surface(self, pygame.image.load("Images/asteroid.png").convert_alpha(),
                                        [random.randint(1, map_size[0]),
                                         random.randint(1, map_size[1])],
                                        False, 8, spin=random.uniform(-2, 2),
@@ -86,7 +86,7 @@ class TestGame(Game):
                 self.all.add(star)
         
         # base
-        self.base = game_object.Surface(self, pygame.image.load("Images/base.png").convert(),
+        self.base = game_object.Surface(self, pygame.image.load("Images/base.png").convert_alpha(),
                                          [self.map_size[0] / 2, self.map_size[1] / 2],
                                          False, 0, spin=0.5, life=200)
         self.environment.add(self.base)
@@ -117,7 +117,7 @@ class TestGame(Game):
                     position = [random.randint(1, self.map_size[0]),
                                 random.randint(1, self.map_size[1])]
 
-                test = game_object.Surface(self, pygame.image.load("Images/asteroid.png").convert(),
+                test = game_object.Surface(self, pygame.image.load("Images/asteroid.png").convert_alpha(),
                                            position,
                                            False, 8, spin=random.uniform(-2, 2),
                                            speed=[random.uniform(-3, 3), random.uniform(-3, 3)], life=5)
