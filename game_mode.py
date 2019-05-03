@@ -80,10 +80,9 @@ class TestGame(Game):
         # Starry sky, randomly generated
         img = Image.new('RGB', map_size)
         pixel_map = img.load()
-        if not self.debug:
-            for x in range(1000):
-                pixel_map[random.randint(0, self.map_size[0] - 1),
-                          random.randint(0, self.map_size[1] - 1)] = (255, 255, 255, 0)
+        for x in range(1000):
+            pixel_map[random.randint(0, self.map_size[0] - 1),
+                      random.randint(0, self.map_size[1] - 1)] = (255, 255, 255, 0)
         stars = game_object.Background(self, pygame.image.frombuffer(img.tobytes("raw", "RGB"), map_size, "RGB").convert())
         self.starry_sky.add(stars)
         self.all.add(stars)
