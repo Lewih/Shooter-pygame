@@ -1,4 +1,5 @@
 import random
+import sys
 import pygame
 from PIL import Image
 import game_object
@@ -168,6 +169,9 @@ class TestGame(Game):
 if __name__ == "__main__":
     # Initialize pygame
     pygame.init()
-
-    GAME = TestGame((2500, 2500), (1300, 800), True) # mapsize, screensize, debug_enable
+    if len(sys.argv) > 1 and sys.argv[1] == '-d':
+        debug = True
+    else:
+        debug = False
+    GAME = TestGame((2500, 2500), (1300, 800), debug) # mapsize, screensize, debug_enable
     GAME.mainloop()
