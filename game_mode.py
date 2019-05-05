@@ -50,6 +50,9 @@ class TestGame(Game):
 
         self.asteroids = pygame.sprite.Group()
 
+        # Finalize screen caption
+        pygame.display.set_caption("Shooter")
+
         # User
         self.user = player_object.Ship(self, pygame.image.load('Images/ship.png').convert_alpha(), 
                                        [self.map_size[0] / 2, self.map_size[1] / 2 + 100],
@@ -62,10 +65,7 @@ class TestGame(Game):
         self.allies.add(self.user)
         self.all.add(self.user)
 
-        # Finalize screen caption
-        pygame.display.set_caption("Shooter")
-
-        # edge objects [[position], [dimension]]
+        # Edge objects [[position], [dimension]]
         boundaries = [[[0, 0], [map_size[0], 20]],
                       [[0, map_size[1]], [map_size[0], 20]],
                       [[0, 0], [20, map_size[1]]],
@@ -75,19 +75,6 @@ class TestGame(Game):
             self.edge.add(item)
             self.environment.add(item)
             self.all.add(item)
-
-        # test objects
-        self.asteroid_image1 = pygame.image.load("Images/asteroid.png").convert_alpha()
-        for x in range(20):
-            test = game_object.Surface(self, self.asteroid_image1,
-                                       [random.randint(1, map_size[0]),
-                                        random.randint(1, map_size[1])],
-                                       False, 8, spin=random.uniform(-2, 2),
-                                       speed=[random.uniform(-3, 3), random.uniform(-3, 3)], life=5)
-            self.environment.add(test)
-            self.asteroids.add(test)
-            self.targets.add(test)
-            self.all.add(test)
 
         # Starry sky, randomly generated
         img = Image.new('RGB', map_size)
@@ -99,12 +86,29 @@ class TestGame(Game):
         self.starry_sky.add(stars)
         img.close()
         
-        # base
+        # Base
         self.base = game_object.Surface(self, pygame.image.load("Images/base.png").convert_alpha(),
                                         [self.map_size[0] / 2, self.map_size[1] / 2],
                                         False, 0, spin=0.5, life=200)
         self.environment.add(self.base)
         self.allies.add(self.base)
+
+         # Asteroids
+        self.asteroid_image1 = pygame.image.load("Images/asteroid.png").convert_alpha()
+        for x in range(20):
+            position = [random.randint(1, self.map_size[0]),
+                        random.randint(1, self.map_size[1])]
+            while self.base.distance_from(position) < 700:
+                position = [random.randint(1, self.map_size[0]),
+                            random.randint(1, self.map_size[1])]
+            test = game_object.Surface(self, self.asteroid_image1,
+                                       position, False, 8,
+                                       spin=random.uniform(-2, 2),
+                                       speed=[random.uniform(-4, 4), random.uniform(-4, 4)], life=5)
+            self.environment.add(test)
+            self.asteroids.add(test)
+            self.targets.add(test)
+            self.all.add(test)
 
     def mainloop(self):
         """Main game loop
