@@ -17,7 +17,6 @@ class Game:
 
         # Setting up the screen
         self.screen = pygame.display.set_mode(self.screen_size, pygame.DOUBLEBUF)
-        #self.screen.set_alpha(None) # disable to use collide mask TODO
 
         # Game clock setting
         self.clock = pygame.time.Clock()
@@ -32,6 +31,15 @@ class Game:
         self.targets = pygame.sprite.Group()
         self.all = pygame.sprite.Group()
 
+        # default shines, theoretic performance boost
+        self.standard_shine = pygame.Surface([5, 2], pygame.SRCALPHA).convert_alpha()
+        self.standard_shine.fill((155, 155, 0))
+        self.white_shine = pygame.Surface([2, 2], pygame.SRCALPHA).convert_alpha()
+        self.white_shine.fill((255, 255, 255))
+        self.lightred_shine = pygame.Surface([2, 2], pygame.SRCALPHA).convert_alpha()
+        self.lightred_shine.fill((255, 150, 150))
+
+
 
 class TestGame(Game):
     """Test game with some sprites and basic settings"""
@@ -39,14 +47,17 @@ class TestGame(Game):
     def __init__(self, map_size, screen_size, debug):
         super().__init__(map_size, screen_size, debug)
 
+        self.asteroids = pygame.sprite.Group()
+
         # User
         self.user = player_object.Ship(self, pygame.image.load('Images/ship.png').convert_alpha(), 
                                        [self.map_size[0] / 2, self.map_size[1] / 2 + 100],
-                                       0.7, 0.4, 10, 10.0, 10.0, 7, need_max_rect=False,
+                                       0.7, 0.4, 10, 10.0, 12.0, 8, need_max_rect=False,
                                        camera_mode='scrolling', controlled=True)
         self.camera_x = 100
         self.camera_y = 200
         self.ships.add(self.user)
+        # self.targets.add(self.user)
         self.allies.add(self.user)
         self.all.add(self.user)
 
@@ -62,8 +73,6 @@ class TestGame(Game):
             item = game_object.Edge(self, obj[0], obj[1], (255, 0, 0))
             self.edge.add(item)
             self.environment.add(item)
-            self.targets.add(item)
-            self.allies.add(item)
             self.all.add(item)
 
         # test objects
@@ -74,6 +83,7 @@ class TestGame(Game):
                                        False, 8, spin=random.uniform(-2, 2),
                                        speed=[random.uniform(-3, 3), random.uniform(-3, 3)], life=5)
             self.environment.add(test)
+            self.asteroids.add(test)
             self.targets.add(test)
             self.all.add(test)
 
@@ -85,7 +95,6 @@ class TestGame(Game):
                       random.randint(0, self.map_size[1] - 1)] = (255, 255, 255, 0)
         stars = game_object.Background(self, pygame.image.frombuffer(img.tobytes("raw", "RGB"), map_size, "RGB").convert())
         self.starry_sky.add(stars)
-        self.all.add(stars)
         img.close()
         
         # base
@@ -125,11 +134,18 @@ class TestGame(Game):
                                            False, 8, spin=random.uniform(-2, 2),
                                            speed=[random.uniform(-3, 3), random.uniform(-3, 3)], life=5)
                 self.environment.add(test)
+                self.asteroids.add(test)
                 self.targets.add(test)
                 self.all.add(test)
 
             # keys events
             keys = pygame.key.get_pressed()
+
+            # asteroids collision
+            for ally, asteroids in pygame.sprite.groupcollide(self.allies, self.asteroids, False, False).items():
+                for obj in asteroids:
+                    ally.hit(obj._damage)
+                    obj.explode(color=(255, 0, 0))
 
             # pause the game
             if not keys[pygame.K_a]:

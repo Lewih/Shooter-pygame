@@ -72,10 +72,9 @@ class Game_Object(pygame.sprite.Sprite):
             for x in range(50):
                 shine = Shine(self._game, [self.rect.centerx, self.rect.centery],
                               random.randint(1, 360), spin=random.uniform(-2, 2),
-                              color=
-                              (random.randint(1, 255),
-                               random.randint(1, 255),
-                               random.randint(1, 255)))
+                              color=(random.randint(1, 255),
+                                     random.randint(1, 255),
+                                     random.randint(1, 255)))
                 self._game.environment.add(shine)
                 self._game.all.add(shine)
 
@@ -100,8 +99,8 @@ class Game_Object(pygame.sprite.Sprite):
         Returns:
             Bool -- True if the object is in sight"""
 
-        if (abs(self._game.camera_x - self._position[0]) < (self._game.screen_size[0] / 2 + 200) and
-            abs(self._game.camera_y - self._position[1]) < (self._game.screen_size[1] / 2) + 200):
+        if (abs(self._game.camera_x - self._position[0]) < (self._game.screen_size[0] / 2) + self.rect.width and
+            abs(self._game.camera_y - self._position[1]) < (self._game.screen_size[1] / 2) + self.rect.height):
             return True
         return False
 
@@ -115,6 +114,16 @@ class Game_Object(pygame.sprite.Sprite):
 
         return ((self._position[0] - point[0])**2 +
                 (self._position[1] - point[1])**2)**0.5 
+
+    def get_speed_vector_angle(self):
+        """Calculate angle of the speed vector using atan2
+        
+        Returns:
+            float -- angle in degrees, None if speed vector is [0, 0]"""
+
+        if self._speed == [0, 0]:
+            return None
+        return math.degrees(math.atan2(self._speed[1], self._speed[0]))
 
     def get_max_rect(self):
         """side lenght of the square which contains the image independently of the its angle.
@@ -254,11 +263,6 @@ class Surface(Game_Object):
 
     def update(self):
         self.spin(self._spin / self._game.delta_time)
-        for caught in pygame.sprite.spritecollide(self, self._game.allies, False):
-            if not self._game.allies.has(self):
-                self.explode(color=(255, 0, 0))
-                caught.hit(self._damage)
-
         Game_Object.update(self)
 
 
@@ -280,21 +284,38 @@ class Edge(Surface):
                                ((self._game.screen_size[0] / 2) - ((self._game.camera_x - self.rect.x)),
                                 (self._game.screen_size[1] / 2) - ((self._game.camera_y - self.rect.y))))
 
+        # everything which touch an edge explodes
+        for caught in pygame.sprite.spritecollide(self, self._game.all, False):
+            if not self._game.edge.has(caught):
+                caught.explode()
 
-class Shine(Surface):
+
+class Shine(Surface): # should be child of pygame.sprite due to performance issue
     """lights and shines, child of Surface"""
 
-    def __init__(self, game, position, angle, spin=0, dimension=[5, 2], color=(155, 155, 0)):
-        super().__init__(game, pygame.Surface(dimension, pygame.SRCALPHA).convert_alpha(),
-                         position, False,  debuggable=False)
-        self._color = color
-        self._image.fill(color)
+    def __init__(self, game, position, angle, image=None,
+                 spin=0, dimension=[5, 2], color=(155, 155, 0),
+                 speed=None):
+        if image:
+            super().__init__(game, image, position, False,  debuggable=False)
+        else:
+            super().__init__(game, pygame.Surface(dimension, pygame.SRCALPHA).convert_alpha(),
+                            position, False,  debuggable=False)
+            self._image.fill(color)
+            self._color = color
+
         self._angle = random.randint(0, 360)
-        self._speed = [(-math.cos(math.radians(angle))) * random.randint(0, 7) + random.uniform(-1, 1),
-                       (math.sin(math.radians(angle))) * random.randint(0, 7) + random.uniform(-1, 1)] 
+        if speed is None:
+            self._speed = [(-math.cos(math.radians(angle))) * random.randint(0, 7) + random.uniform(-1, 1),
+                           (math.sin(math.radians(angle))) * random.randint(0, 7) + random.uniform(-1, 1)] 
+        else:
+            self._speed = speed
         self._time2live = random.randint(5, 100)
         self._spin = spin
-    
+
+    def explode(self):
+        self.kill()
+
     def update(self):
         self._time2live -= 1 / self._game.delta_time
         if self._time2live < 0:
