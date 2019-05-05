@@ -76,8 +76,9 @@ class TestGame(Game):
             self.all.add(item)
 
         # test objects
+        self.asteroid_image1 = pygame.image.load("Images/asteroid.png").convert_alpha()
         for x in range(20):
-            test = game_object.Surface(self, pygame.image.load("Images/asteroid.png").convert_alpha(),
+            test = game_object.Surface(self, self.asteroid_image1,
                                        [random.randint(1, map_size[0]),
                                         random.randint(1, map_size[1])],
                                        False, 8, spin=random.uniform(-2, 2),
@@ -129,7 +130,7 @@ class TestGame(Game):
                     position = [random.randint(1, self.map_size[0]),
                                 random.randint(1, self.map_size[1])]
 
-                test = game_object.Surface(self, pygame.image.load("Images/asteroid.png").convert_alpha(),
+                test = game_object.Surface(self, self.asteroid_image1,
                                            position,
                                            False, 8, spin=random.uniform(-2, 2),
                                            speed=[random.uniform(-3, 3), random.uniform(-3, 3)], life=5)
@@ -168,5 +169,5 @@ if __name__ == "__main__":
     # Initialize pygame
     pygame.init()
 
-    GAME = TestGame((2500, 2500), (1300, 800), False) # mapsize, screensize, debug_enable
+    GAME = TestGame((2500, 2500), (1300, 800), True) # mapsize, screensize, debug_enable
     GAME.mainloop()

@@ -265,6 +265,8 @@ class Missile(game_object.Game_Object):
         self._target = self.find_target()
 
     def explode(self):
+        """Custom missile explosion"""
+
         self.kill()
         counter = 0
         for x in range(59):
@@ -278,6 +280,7 @@ class Missile(game_object.Game_Object):
 
     def find_target(self):
         """Find the closest target"""
+
         target = None
         for obj in self._game.targets.sprites():
             if not target:
@@ -288,15 +291,21 @@ class Missile(game_object.Game_Object):
 
     def seek(self):
         """Seek the chosen target if alive"""
+
         if self._target and self._target.alive():
             new_angle = math.degrees(math.atan2(self._position[1] - self._target._position[1],
-                                     -self._position[0] + self._target._position[0])) # TODO optimize, bad implementation
-            if new_angle < 0:
-                new_angle += 360
-            if new_angle >= self._angle % 360:
-                self.spin(self._spin)
-            else:
+                                     -self._position[0] + self._target._position[0]))
+            angle = self._angle % 360
+            if angle <= -180 :
+                angle += 360
+            elif angle > 180:
+                angle -= 360
+            
+            if - new_angle + angle <= 180 and - new_angle + angle >= 0:
                 self.spin(-self._spin)
+            else:
+                self.spin(self._spin) 
+
             self._speed = [self._missile_speed * math.cos(math.radians(self._angle)), 
                            self._missile_speed * -math.sin(math.radians(self._angle))]
 

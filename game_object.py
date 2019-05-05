@@ -99,8 +99,8 @@ class Game_Object(pygame.sprite.Sprite):
         Returns:
             Bool -- True if the object is in sight"""
 
-        if (abs(self._game.camera_x - self._position[0]) < (self._game.screen_size[0] / 2) + self.rect.width and
-            abs(self._game.camera_y - self._position[1]) < (self._game.screen_size[1] / 2) + self.rect.height):
+        if (abs(self._game.camera_x - self._position[0]) < (self._game.screen_size[0] / 2) + self.rect.width / 2 and
+            abs(self._game.camera_y - self._position[1]) < (self._game.screen_size[1] / 2) + self.rect.height / 2):
             return True
         return False
 
