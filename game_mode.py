@@ -40,6 +40,9 @@ class Game(Thread):
     """
     def __init__(self, map_size, screen_size, debug):
         super().__init__()
+        # Initialize pygame
+        pygame.init()
+
         self.map_size = map_size
         self.screen_size = screen_size
         self.debug_font = pygame.font.SysFont("monospace", 15)

@@ -8,8 +8,6 @@ from game_mode import *
 import docopt
 
 if __name__ == "__main__":
-    # Initialize pygame
-    pygame.init()
     args = sys.argv
     if '-d' in args:
         debug = True
