@@ -1,10 +1,12 @@
 import math
 import random
 import pygame
+import itertools
+import player_object
 
 
 class Game_Object(pygame.sprite.Sprite):
-    """Generic game object. Implements sprites rotation and movement.
+    """Generic game object. Implements sprites rotation and movement.Each object has a unique id.
 
     Arguments:
         game {object} -- game instance
@@ -15,9 +17,15 @@ class Game_Object(pygame.sprite.Sprite):
         camera_mode {string} -- normal = not player object
                                scrolling = locked camera on player ship
     """
-
+    
+    id_iter = itertools.count()
     def __init__(self, game, position, image, debuggable, need_max_rect=False, camera_mode="normal"):
         super().__init__()
+        if isinstance(self, player_object.Ship):
+            self._id = next(self.id_iter)
+            game.hashmap.setter(self._id, self.__str__())
+        else:
+            self._id = None
         self._game = game
         self._image = image
         if image:
@@ -45,15 +53,16 @@ class Game_Object(pygame.sprite.Sprite):
     def __str__(self):
         return """
         game_object = {
+        _id: %s,
         _life: %s,
         _rect: %s,
-        origin: %s,
+        _origin: %s,
         _position: %s,
         _speed: [%f, %f],
         _spin: %f,
         _angle: %f,
         _camera: %s,
-        _distance_from_base: %s}""" % (self._life, self.rect, self._origin, self._position,
+        _distance_from_base: %s}""" % (self._id, self._life, self.rect, self._origin, self._position,
                            self._speed[0], self._speed[1],
                            self._spin, self._angle, self._camera_mode, self.distance_from(self._game.base._position))
 
@@ -61,6 +70,7 @@ class Game_Object(pygame.sprite.Sprite):
         """kill the sprite and make fireworks"""
 
         self.kill()
+        self._game.hashmap.remove(self._id)
         if color: # reduntant code due to performance issue TODO
             for x in range(50):
                 shine = Shine(self._game, [self.rect.centerx, self.rect.centery],

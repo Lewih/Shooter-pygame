@@ -2,19 +2,49 @@ import random
 import sys
 import pygame
 from PIL import Image
+from threading import Condition, Thread
 import game_object
 import player_object
+import multiplayer
 
 
-class Game:
+class SharedHashTable:
+    
+    def __init__(self):
+        self._condition = Condition()
+        self._writable = True
+        self._hashmap = {} # hashmap containing all relevant game objects {id: object}
+    
+    def setter(self, key, data):
+        self._condition.acquire()
+        self._hashmap[key] = data
+        self._condition.notify()
+        self._condition.release()
+    
+    def getter(self, key):
+        self._condition.acquire()
+        value = self._hashmap.get(key)
+        self._condition.notify()
+        self._condition.release()
+        return value
+    
+    def remove(self, key):
+        self._condition.acquire()
+        self._hashmap.pop(key)
+        self._condition.notify()
+        self._condition.release()
+
+
+class Game(Thread):
     """Generic Game, initialize important attributes and contains mainloop
     """
     def __init__(self, map_size, screen_size, debug):
+        super().__init__()
         self.map_size = map_size
         self.screen_size = screen_size
         self.debug_font = pygame.font.SysFont("monospace", 15)
         self.debug = debug
-        # self.delta_time = 0
+        self.hashmap = SharedHashTable()
 
         # Setting up the screen
         self.screen = pygame.display.set_mode(self.screen_size, pygame.DOUBLEBUF)
@@ -110,8 +140,8 @@ class TestGame(Game):
             self.targets.add(test)
             self.all.add(test)
 
-    def mainloop(self):
-        """Main game loop
+    def run(self):
+        """game mainloop
         """
         done = False
         counter = 0
@@ -165,17 +195,54 @@ class TestGame(Game):
                                                         str(len(self.all.sprites())) +
                                                         ", fps: " + str(self.clock.get_fps()),
                                                         1, (255, 255, 0))
-                GAME.screen.blit(display_label, (0, 0))
+                self.screen.blit(display_label, (0, 0))
                 pygame.display.update()
 
         pygame.quit()
 
-if __name__ == "__main__":
-    # Initialize pygame
-    pygame.init()
-    if len(sys.argv) > 1 and sys.argv[1] == '-d':
-        debug = True
-    else:
-        debug = False
-    GAME = TestGame((2500, 2500), (1300, 800), debug) # mapsize, screensize, debug_enable
-    GAME.mainloop()
+
+class Multi1v1(Game):
+    
+    def __init__(self, map_size, screensize, role, debug_enable, ip='localhost'):
+        super().__init__()
+        if role == 'server':
+            self._role = True
+            self.connection = multiplayer.Server(self)
+        else:
+            self._role = False
+            self.connection = multiplayer.Client(self)
+        
+    def update_server(self):
+        pass
+
+    def update_client(self):
+        pass
+
+    def run(self):
+        done = False
+        counter = 0
+
+        # check for exit
+        while not done:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    done = True
+
+            # Update hashmap
+            if self._role:
+                self.update_server()
+            else:
+                self.update_client()
+
+            # Refresh screen and update sprites
+            self.screen.fill((0, 0, 0))
+            self.starry_sky.update()
+            self.bullets.update()
+            self.ships.update(keys)
+            self.environment.update()
+            display_label = self.debug_font.render(" Sprites in game:" +
+                                                    str(len(self.all.sprites())) +
+                                                    ", fps: " + str(self.clock.get_fps()),
+                                                    1, (255, 255, 0))
+            self.screen.blit(display_label, (0, 0))
+            pygame.display.update()

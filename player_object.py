@@ -72,10 +72,10 @@ class Ship(game_object.Game_Object):
         sin90 = math.sin(math.radians(self._angle + 90))
 
         rel_max_speed = [self._max_speed * cos, 
-                              self._max_speed * -sin]
+                         self._max_speed * -sin]
 
         rel_max_h_speed = [self._max_speed * cos90, 
-                                self._max_speed * -sin90]
+                           self._max_speed * -sin90]
 
         if pressedKeys[pygame.K_UP]:
             shine = game_object.Shine(self._game, [self.rect.centerx, self.rect.centery],
