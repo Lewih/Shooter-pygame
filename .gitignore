@@ -1,6 +1,5 @@
 game.py
 misc_objects.py
-multiplayer.py
 .vscode/launch.json
 .vscode/settings.json
 __pycache__/bullet.cpython-37.pyc
